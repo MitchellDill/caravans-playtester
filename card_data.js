@@ -15,11 +15,13 @@ var Hero = function(name, stam, trait) {
 		equipped : [],
 		unequipped : []
 	};
+
+	allHeroes.push(this);
 }
 
 Hero.prototype.checkRoll = function(move, diceResults) {
-	var result = diceResults.reduce(function(first, second) {
-		return first += second;
+	var result = diceResults.reduce(function(accum, current) {
+		return accum + current;
 	}, 0);
 	return ((result + this.rollBonus) >= move.cost) ? true : false; 
 };
@@ -29,11 +31,15 @@ Hero.prototype.checkRoll = function(move, diceResults) {
 var heroMulholland = new Hero('Our Grave-Minded Quartermaster, Mulholland', 16);
 
 
+
+
 //traits
 
 var allTraits = {
 
 };
+
+
 
 //weapon cards
 
@@ -77,6 +83,8 @@ var Weapon = function(name, type, damage, twoHanded, worth, move1, move2, move3)
 var unwieldyGreatsword = new Weapon('Unwieldy Greatsword', 'sword', 3, true, 99, 'hack', 'slash');
 
 allWeapons.push(allSwords, allAxes, allHammers, allDaggers, allSpears, allBows, allShields);
+
+
 
 //movelist
 
@@ -137,6 +145,7 @@ var swordMoveSlash = new Move('Slash', 3, function(target, weapon) {
 
 
 
+
 //dice
 
 var Dice = function() {
@@ -159,4 +168,80 @@ var sixDice = new Dice(1, 2, 3, 4, 5, 6);
 
 
 
+
 //enemy cards
+
+var allEnemies = [tier0Enemies, tier1Enemies, tier2Enemies, tier3Enemies];
+
+var tier0Enemies = [];
+var tier1Enemies = [];
+var tier2Enemies = [];
+var tier3Enemies = []; 
+
+var Enemy = function(name, stam, tier, region, breakThresh) {
+	this.name = name;
+	this.stam = stam;
+	this.tier = tier;
+	this.region = region;
+	this.breakThresh = breakThresh;
+	this.breakDiceCurrent = [];
+	this.armor = 0;
+	this.engaged = false;
+	this.statusEffect = false;
+	/*
+	this.moveset = allEnemyMoves[region][tier][name];
+	*/
+	this.ultCharge = 0;
+	this.reward = [];
+
+	allEnemies[tier].push(this);
+};
+
+Enemy.protoype.howManyBreak = function() {
+	return this.breakDiceCurrent.length;
+};
+
+Enemy.protoype.breakDiceTotal = function() {
+	return this.breakDiceCurrent.reduce(function(accum, current) {
+		return accum + current;
+	}, 0);
+};
+
+Enemy.prototype.attack = function(target) {
+	var attackSelected = enemyDice.roll();
+	return this.moveset[attackSelected](target);
+};
+
+var enemyMurkman = new Enemy('Murkman', 18, 2, 'Deep Marshes', 9);
+enemyMurkman.moveset = {
+	basic :
+	specialized : 
+	advanced :
+	basicText : 
+	specializedText :
+	advancedText : 
+	ultimate :  
+	ultFiresOn : 3,
+	ultimateText :
+};
+
+
+/*
+
+enemy moveset template = {
+	basic : 
+	specialized : 
+	advanced :
+	basicText : 
+	specializedText :
+	advancedText : 
+	ultimate :  
+	ultFiresOn : 
+	ultimateText :
+};
+
+*/
+
+//the engagement object
+
+var currentEngagements = {};
