@@ -207,6 +207,7 @@ var allEnemies = {
 var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.name = name;
 	this.stam = stam;
+	this.maxStam = stam;
 	this.tier = tier;
 	this.region = region;
 	this.breakThresh = breakThresh;
@@ -332,3 +333,4 @@ var establishEngagement = function(hero, enemy) {
 		enemy.engaged = true;
 	}
 };
+

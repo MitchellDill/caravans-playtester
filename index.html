@@ -9,8 +9,48 @@
   <body>
     <script>
     	$(document).ready(function() {
+    		$turnMarquee = $('#turnMarquee');
+    		$turnMarquee.text('PLAYER TURN');
 
-    		
+    		$menuHeroName = $('#heroName');
+    		$menuHeroName.append('<p>' + heroMulholland.name + '</p>');
+
+    		$heroMenu1 = $('#heroOptionsWindow1');
+    		$('#heroOptionsWindow1 div:eq(0)').first().text('Attack').addClass('attack');
+    		$('#heroOptionsWindow1 div:eq(1)').first().text('Break').addClass('break');
+    		$('#heroOptionsWindow1 div:eq(2)').first().text('Inventory').addClass('inv');
+
+
+    		$heroMenu2 = $('#heroOptionsWindow2');
+
+    		$('div.option').on('click', function() {
+    			if ($(this).hasClass('attack')) {
+    				$heroMenu2.html('');
+    				$heroMenu2.append('<div class="option"><p>Hack</p></div>');
+    				$heroMenu2.append('<div class="option"><p>Slash</p></div>');
+    			} else if ($(this).hasClass('break')) {
+    				$heroMenu2.html('');
+    				$heroMenu2.append('<div class="option"><p>Roll Break!</p></div>');
+    			} else if ($(this).hasClass('inv')) {
+    				$heroMenu2.html('');
+    				$heroMenu2.append('<div class="option"><p>Your Inventory!</p></div>');
+    			}
+    		});
+
+    		var enemy1 = enemyMurkman;
+    		theEnemyParty.push(enemy1);
+    		$('div#unengagedEnemies').append('<div class=enemy><p>' + enemy1.name + '</p></div');
+    		$('.enemy').append('<div class="statWindow">' + 
+    			'<div>Stamina: ' + enemy1.stam + '/' + enemy1.maxStam + '</div>' +
+    			'<div>Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>');
+
+    		var hero1 = heroMulholland;
+    		theParty.push(hero1);
+    		$('div#unengagedHeroes').append('<div class=hero><p>' + hero1.name + '</p></div');
+
+
+
+
     	})
 
     </script>
@@ -19,23 +59,74 @@
 
     </nav>	
     <header>
-    	
+    <h1>Caravans Combat Playtester</h1>
+    <div id="turnMarquee"></div>
     </header>
-    <section>
-    	
-    </section>
-    <section>
-    	
-    </section>
-    <section>
-    	
-    </section>
-    <aside>
-    	
-    </aside>
-    <footer>
-    	
-    </footer>
 
+    <div id="wholeBattleground">
+    	<section id="enemyBattleground" class="enemy">
+    		<div id="unengagedEnemies">
+    		</div>
+
+    		<div id="engagedEnemies">
+    		</div>
+    	</section>
+
+   		<section id ="partyBattleground" class="hero">
+   			<div id="engagedHeroes">
+    		</div>
+
+    		<div id="unengagedHeroes">
+    		</div>
+     	</section>
+	</div>
+
+    <section>
+    	<div id="currentSelectionLabel">
+    	</div>
+    </section>
+
+    <aside>
+    	<div id="feed">
+    	</div>
+    </aside>
+
+    <footer>
+    	<div id="menu">
+    		<div id ="heroStats">
+    			<div id="heroStam">
+    				<p>Stamina</p>
+    			</div>
+    			<div id="heroGuard">
+    				<p>Guard</p>
+    			</div>
+    			<div id="heroArmor">
+    				<p>Armor</p>
+    			</div>
+    		</div>
+    		<div id="heroDisplay">
+    			<div id="heroName">
+    			</div>
+    			<div id="heroPortrait">
+    			</div>
+    			<div id="heroDice">
+    			</div>
+    		</div>
+    		<div id="heroOptionsWindow1">
+    			<div class="option">
+    				<p></p>
+    			</div>
+    			<div class="option">
+    				<p></p>
+    			</div>
+    			<div class="option">
+    				<p></p>
+    			</div>
+    		</div>
+    		<div id="heroOptionsWindow2">
+
+    		</div>
+    	</div>
+    </footer>
   </body>
 </html>
