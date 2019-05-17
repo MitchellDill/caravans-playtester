@@ -8,6 +8,7 @@ var Hero = function(name, stam, trait) {
 	this.armor = 0;
 	this.guard = 0;
 	this.statusEffect = false;
+	this.statuses = [];
 	this.engaged = false;
 	this.rollBonus = 0;
 	this.dice = [];
@@ -171,12 +172,11 @@ var sixDice = new Dice(1, 2, 3, 4, 5, 6);
 
 //enemy cards
 
-var allEnemies = [tier0Enemies, tier1Enemies, tier2Enemies, tier3Enemies];
+var allEnemies = {
+	'Deep Marshes' : [[],[],[],[]],
+	'Rolling Hills' : [[],[],[],[]]
+};
 
-var tier0Enemies = [];
-var tier1Enemies = [];
-var tier2Enemies = [];
-var tier3Enemies = []; 
 
 var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.name = name;
@@ -185,16 +185,18 @@ var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.region = region;
 	this.breakThresh = breakThresh;
 	this.breakDiceCurrent = [];
+	this.broken = false;
 	this.armor = 0;
 	this.engaged = false;
 	this.statusEffect = false;
+	this.statuses = [];
 	/*
 	this.moveset = allEnemyMoves[region][tier][name];
 	*/
 	this.ultCharge = 0;
 	this.reward = [];
 
-	allEnemies[tier].push(this);
+	allEnemies[region][tier].push(this);
 };
 
 Enemy.protoype.howManyBreak = function() {
@@ -214,15 +216,44 @@ Enemy.prototype.attack = function(target) {
 
 var enemyMurkman = new Enemy('Murkman', 18, 2, 'Deep Marshes', 9);
 enemyMurkman.moveset = {
-	basic :
-	specialized : 
-	advanced :
-	basicText : 
-	specializedText :
-	advancedText : 
-	ultimate :  
+	basic : function() {return 2},
+	specialized : function() {
+		arguments.forEach(enemySlipAllEngagement);
+		this.engaged = false;
+	},
+	advanced : function() {
+		this.stam += 6;
+		return 3;
+	},
+	basicText : 'deals ' + enemyMurkman.moveset.basic() + ' damage to ' + target.name,
+	specializedText : 'slips out of engagement!',
+	advancedText : 'regenerates back to ' + this.stam + 'stamina, then deals ' + enemyMurkman.moveset.advanced() + ' damage to ' + target.name,
+	ultimate : function() {
+		return party.map(function(hero) {
+			var message = '';
+			var heroRoll = sixDice();
+			var rollPass;
+			var rollMessage = 'avoided the ultimate!';
+			heroRoll >= 4 ? rollPass = true : rollPass = false;
+			if (!rollPass) {
+				rollMessage = 'was afflicted by bogrot!';
+				hero.statusEffect = true;
+				hero.statuses.push(bogrot);
+			}
+			return message = hero.name + ' rolled a ' + heroRoll + ' and ' + rollMessage;
+		})
+	} 
 	ultFiresOn : 3,
-	ultimateText :
+	ultimateText : 'If heroes cannot roll a 4 or higher on a six-sided die, they\'ll be affliceted by bogrot!',
+	hasOppo : true,
+	oppo : function() {return [1]},
+	oppoText : 'Disengaging from the ' + this.name + 'will cause a hero to take ' + 
+		enemyMurkman.moveset.oppo()[0] + ' damage--this effect then ripples through the ranks of all' + 
+		' other disengaged heroes!'
+};
+
+var enemySlipAllEngagement = function(element) {
+	element.engaged = false;
 };
 
 
@@ -241,6 +272,13 @@ enemy moveset template = {
 };
 
 */
+
+//status, diseases, boons, etc
+
+
+
+
+
 
 //the engagement object
 
