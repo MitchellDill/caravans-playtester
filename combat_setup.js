@@ -1,0 +1,1 @@
+//will move all combat encounter setup functions that are being written in the index to here eventually

@@ -3,6 +3,7 @@
   <head>
   	<script src="jquery.js"></script>
   	<script src="card_data.js"></script>
+  	<script src="combat_setup.js"></script>
     <link href="stylesheet.css" rel="stylesheet" type="text/css">
     <link href="animate.css" rel="stylesheet" type="text/css">
   </head>
@@ -45,8 +46,16 @@
     			'<div>Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>');
 
     		var hero1 = heroMulholland;
+    		hero1.dice.push(startDice, startDice);
+    		hero1.inventory.equipped.push(unwieldyGreatsword);
     		theParty.push(hero1);
     		$('div#unengagedHeroes').append('<div class=hero><p>' + hero1.name + '</p></div');
+    		$('.hero').append('<div class="statWindow">' + 
+    			'<div>Stamina: ' + hero1.stam + '/' + hero1.maxStam + '</div>' +
+    			'<div>Dice Held: ' + hero1.dice.length + '</div>' + 
+    			'<div>Wielding: ' + hero1.inventory.equipped[0].name + '</div>');
+    		$('#heroPortrait').append('<image src="badmully.png" class="center" />');
+    		$('#heroDice').append('<p>' + hero1.dice.length + ' dice available</p>');
 
 
 
