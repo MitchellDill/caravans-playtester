@@ -13,30 +13,7 @@
     		$turnMarquee = $('#turnMarquee');
     		$turnMarquee.text('PLAYER TURN');
 
-    		$menuHeroName = $('#heroName');
-    		$menuHeroName.append('<p>' + heroMulholland.name + '</p>');
-
-    		$heroMenu1 = $('#heroOptionsWindow1');
-    		$('#heroOptionsWindow1 div:eq(0)').first().text('Attack').addClass('attack');
-    		$('#heroOptionsWindow1 div:eq(1)').first().text('Break').addClass('break');
-    		$('#heroOptionsWindow1 div:eq(2)').first().text('Inventory').addClass('inv');
-
-
-    		$heroMenu2 = $('#heroOptionsWindow2');
-
-    		$('div.option').on('click', function() {
-    			if ($(this).hasClass('attack')) {
-    				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option"><p>Hack</p></div>');
-    				$heroMenu2.append('<div class="option"><p>Slash</p></div>');
-    			} else if ($(this).hasClass('break')) {
-    				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option"><p>Roll Break!</p></div>');
-    			} else if ($(this).hasClass('inv')) {
-    				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option"><p>Your Inventory!</p></div>');
-    			}
-    		});
+//battlefield tooltips
 
     		var enemy1 = enemyMurkman;
     		theEnemyParty.push(enemy1);
@@ -52,10 +29,43 @@
     		$('div#unengagedHeroes').append('<div class=hero><p>' + hero1.name + '</p></div');
     		$('.hero').append('<div class="statWindow">' + 
     			'<div>Stamina: ' + hero1.stam + '/' + hero1.maxStam + '</div>' +
-    			'<div>Dice Held: ' + hero1.dice.length + '</div>' + 
+    			'<div id="menuDiceHeld">Dice Held: ' + hero1.dice.length + '</div>' + 
     			'<div>Wielding: ' + hero1.inventory.equipped[0].name + '</div>');
+
+
+//gen hero's menu
+
+    		$menuHeroName = $('#heroName');
+    		$menuHeroName.append('<p>' + hero1.name + '</p>');
+    		genStamMeter(hero1);
     		$('#heroPortrait').append('<image src="badmully.png" class="center" />');
     		$('#heroDice').append('<p>' + hero1.dice.length + ' dice available</p>');
+
+
+    		$heroMenu1 = $('#heroOptionsWindow1');
+    		$('#heroOptionsWindow1 div:eq(0)').first().text('Attack').addClass('attack');
+    		$('#heroOptionsWindow1 div:eq(1)').first().text('Break').addClass('break');
+    		$('#heroOptionsWindow1 div:eq(2)').first().text('Inventory').addClass('inv');
+    		$heroMenu1.prepend('<div class="option"><p class="engage">' + genEngageOption(hero1) + '</p></div>');
+
+
+    		$heroMenu2 = $('#heroOptionsWindow2');
+
+    		$('div.option').on('click', function() {
+    			if ($(this).hasClass('attack')) {
+    				$heroMenu2.html('');
+    				$heroMenu2.append('<div class="option"><p>' + hero1.inventory.equipped[0].move1.name + '</p></div>');
+    				$heroMenu2.append('<div class="option"><p>' + hero1.inventory.equipped[0].move2.name + '</p></div>');
+    			} else if ($(this).hasClass('break')) {
+    				$heroMenu2.html('');
+    				$heroMenu2.append('<div class="option"><p>Roll Break!</p></div>');
+    			} else if ($(this).hasClass('inv')) {
+    				$heroMenu2.html('');
+    				$heroMenu2.append('<div class="option"><p>Your Inventory!</p></div>');
+    			}
+    		});
+
+    		
 
 
 
@@ -105,12 +115,19 @@
     		<div id ="heroStats">
     			<div id="heroStam">
     				<p>Stamina</p>
+    				<meter class="statMeters"></meter>
+    			</div>
+    			<div id="heroCP">
+    				<p>CP</p>
+    				<p>3</p>
     			</div>
     			<div id="heroGuard">
     				<p>Guard</p>
+    				<p>0</p>
     			</div>
     			<div id="heroArmor">
     				<p>Armor</p>
+    				<p>0</p>
     			</div>
     		</div>
     		<div id="heroDisplay">

@@ -27,6 +27,8 @@ var Hero = function(name, stam, trait) {
 	this.stam = stam;
 	this.armor = 0;
 	this.guard = 0;
+	this.cp = 0;
+	this.gainedCP = false;
 	this.statusEffect = false;
 	this.statuses = [];
 	this.engaged = false;
@@ -45,6 +47,13 @@ Hero.prototype.checkRoll = function(move, diceResults) {
 		return accum + current;
 	}, 0);
 	return ((result + this.rollBonus) >= move.cost) ? true : false; 
+};
+
+Hero.prototype.askCP = function(attemptedMove) {
+	if (!this.gainedCP && attemptedMove) {
+		this.gainedCP = true;
+		return this.CP += 1;
+	} 
 };
 
 //hero generation zone
@@ -85,16 +94,21 @@ var Move = function(name, cost, weaponType, enemy, self, extra) {
 	this.cost = cost;
 	this.weaponType = weaponType;
 	this.enemy = enemy;
-	this.self = self;
+	this.hero = self;
 	this.extra = extra;
+	if (weaponType === 'bow') {
+		this.ranged = true;
+	} else {
+		this.ranged = false;
+	}
 
 	allMoves[weaponType][cost][name] = this;
 };
 
 
 Move.prototype.attack = function(target, weapon, hero) {
-	var currentTarget = target.getPrototypeOf();
-	return this[currentTarget](target, weapon, hero);
+	var targetType = target.getPrototypeOf();
+	return this[targetType](target, weapon, hero);
 };
 
 
@@ -149,12 +163,12 @@ var Weapon = function(name, type, damage, twoHanded, worth, move1, move2, move3)
 
 	if (move2) {
 		var move2Group = moveFinder(type, move2); 
-		this.move1 = allMoves[type][move2Group][move2];
+		this.move2 = allMoves[type][move2Group][move2];
 	}
 
 	if (move3) {
 		var move3Group = moveFinder(type, move3); 
-		this.move1 = allMoves[type][move3Group][move3];
+		this.move3 = allMoves[type][move3Group][move3];
 	}
 
 	var typePush = type[0].toUpperCase() + type.slice(1);
@@ -317,9 +331,7 @@ var allStatuses = {
 //the combat and engagement object model
 
 var currentEngagements = {};
-
 var theParty = [];
-
 var theEnemyParty = [];
 
 var establishEngagement = function(hero, enemy) {
