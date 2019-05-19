@@ -107,7 +107,7 @@ var Move = function(name, cost, weaponType, enemy, self, extra) {
 
 
 Move.prototype.attack = function(target, weapon, hero) {
-	var targetType = target.getPrototypeOf();
+	var targetType = Object.getPrototypeOf(target).constructor.name.toLowerCase();
 	return this[targetType](target, weapon, hero);
 };
 
@@ -118,7 +118,7 @@ Move.prototype.attack = function(target, weapon, hero) {
 //movelist -- move creation
 
 var swordMoveHack = new Move('hack', 1, 'sword', function(target){
-	return (target.howManyBreak);
+	return (target.howManyBreak());
 });
 var swordMoveSlash = new Move('slash', 3, 'sword', function(target, weapon) {
 	return (weapon.damage * 2);
@@ -229,6 +229,7 @@ var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.broken = false;
 	this.armor = 0;
 	this.engaged = false;
+	this.engagedTo = [];
 	this.statusEffect = false;
 	this.statuses = [];
 	this.ultCharge = 0;
@@ -330,19 +331,12 @@ var allStatuses = {
 
 //the combat and engagement object model
 
-var currentEngagements = {};
 var theParty = [];
 var theEnemyParty = [];
 
 var establishEngagement = function(hero, enemy) {
-	var heroString = hero.name;
-	var enemyString = enemy.name;
 	hero.engaged = true;
-	if (currentEngagements[enemyString]) {
-		currentEngagements[enemyString].push(heroString);
-	} else {
-		currentEngagements[enemyString] = [].push(heroString);
-		enemy.engaged = true;
-	}
+	enemy.engaged = true;
+	enemy.engagedTo.push(hero);
 };
 

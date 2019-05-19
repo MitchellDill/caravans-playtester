@@ -42,40 +42,59 @@ var findWeaponWithMove = function(move, hero) {
 
 //need to access all actual moves above, doesn't access correct property level
 
+var findEquippedWeaponWithMove = function(moveName, currentHero) {
+	var currentEquip = currentHero.inventory.equipped;
+	for (var i = 0; i < currentEquip.length; i++) {
+		if (findWhichMoveWithName(moveName, currentEquip[i]).name === moveName) {
+			return currentEquip[i];
+		}
+	};
+};
+
+var findWhichMoveWithName = function(moveName, weapon) {
+	for (var moves in weapon) {
+		if (weapon[moves].name === moveName) {
+			return weapon[moves];
+		}
+	};
+};
+
+
 var returnEngagedEnemy = function(hero) {
-	for (var engagedEnemy in currentEngagements) {
-		for (var i = 0; i < engagedEnemy.length; i++) {
-				if (engagedEnemy[i].name === hero.name) {
-					return engagedEnemy;
-				}
+	for (var engagedEnemy in theEnemyParty) {
+		var engagements = theEnemyParty[engagedEnemy].engagedTo;
+		for (var i = 0; i < engagements.length; i++) {
+			if (engagements[i] === hero) {
+				return theEnemyParty[engagedEnemy];
+			}
 		};
 	};
 };
 
 //need to address below function so that it grabs correct parts of move object--hard to do in console
 
+
+
 var chooseMove = function(move, hero) {
-	currentWeapon = hero.inventory.equipped[0];
-	//currentWeapon = findWeaponWithMove(move, hero);
-	currentMove = currentWeapon[move];
-	if (currentMove.enemy) {
-		if (!currentMove.ranged) {
+	if (move.enemy) {
+		if (!move.ranged) {
 			currentTarget = returnEngagedEnemy(hero);
-		} else if (currentMove.ranged) {
+		} else if (move.ranged) {
 			currentTarget;
 		}
 		//select which dice to roll
 		currentDice = hero.dice;
 		//set currentDice = selectedDice
-		currentDiceResult = rollDiceIntoArray(diceArr);
+		currentDiceResult = rollDiceIntoArray(currentDice);
 		currentDice = [];
-		$('div#menuDiceHeld').text('Dice Held: ' + hero1.dice.length);
+		$('div#menuDiceHeld').text('Dice Held: ' + hero.dice.length);
 		
-		if (hero.checkDice(move, currentDiceResult)) {
+		if (hero.checkRoll(move, currentDiceResult)) {
 			currentCombatMessage = 'Success! ' + hero.name + ' rolled a ' + 
 			currentDiceResult.reduce(arrayAsSingleValue) + '!';
-			currentTargetDamage = currentMove.attack(currentTarget, currentWeapon, currentHero);
+			currentTargetDamage = move.attack(currentTarget, currentWeapon, currentHero);
 			dealDamage(currentTarget, currentTargetDamage);
+			$updateTooltip('enemy', 'stam');
 		} else {
 			currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
 			currentDiceResult.reduce(arrayAsSingleValue) + '!';
@@ -93,13 +112,13 @@ var chooseMove = function(move, hero) {
 
 	}
 
-	if (currentMove.hero) {
+//	if (currentMove.hero) {
 
-	}	
+//	}	
 
-	if (currentMove.extra) {
+//	if (currentMove.extra) {
 
-	}
+//	}
 	return true;
 };
 
@@ -125,4 +144,14 @@ var rollDiceIntoArray = function(diceArr) {
 
 var arrayAsSingleValue = function(accum, current) {
 	return accum + current;
+};
+
+
+
+// combat cleanup functions follow
+
+
+var $updateTooltip = function(unitType, stat) {
+	var className = '' + unitType + stat.slice(0, 1).toUpperCase() + stat.slice(1); 
+	$('div.' + className).text(stat + ': ' + theEnemyParty[0].stam + '/' + theEnemyParty[0].maxStam);
 };

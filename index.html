@@ -19,10 +19,11 @@
     		theEnemyParty.push(enemy1);
     		$('div#unengagedEnemies').append('<div class=enemy><p>' + enemy1.name + '</p></div');
     		$('.enemy').append('<div class="statWindow">' + 
-    			'<div>Stamina: ' + enemy1.stam + '/' + enemy1.maxStam + '</div>' +
+    			'<div class="enemyStam">Stamina: ' + enemy1.stam + '/' + enemy1.maxStam + '</div>' +
     			'<div>Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>');
 
     		var hero1 = heroMulholland;
+    		currentHero = hero1;
     		hero1.dice.push(startDice, startDice);
     		hero1.inventory.equipped.push(unwieldyGreatsword);
     		theParty.push(hero1);
@@ -54,8 +55,8 @@
     		$('div.option').on('click', function() {
     			if ($(this).hasClass('attack')) {
     				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option"><p>' + hero1.inventory.equipped[0].move1.name + '</p></div>');
-    				$heroMenu2.append('<div class="option"><p>' + hero1.inventory.equipped[0].move2.name + '</p></div>');
+    				$heroMenu2.append('<div class="option move"><p class="move">' + hero1.inventory.equipped[0].move1.name + '</p></div>');
+    				$heroMenu2.append('<div class="option move"><p class="move">' + hero1.inventory.equipped[0].move2.name + '</p></div>');
     			} else if ($(this).hasClass('break')) {
     				$heroMenu2.html('');
     				$heroMenu2.append('<div class="option"><p>Roll Break!</p></div>');
@@ -65,8 +66,15 @@
     			}
     		});
 
-    		
 
+    		establishEngagement(hero1, enemy1);
+
+    		$(document).on('click', 'div.move>p', function() {
+				var moveText = $(this).text();
+				currentWeapon = findEquippedWeaponWithMove(moveText, currentHero);
+				currentMove = findWhichMoveWithName(moveText, currentWeapon);
+				chooseMove(currentMove, currentHero);
+			});
 
 
 
