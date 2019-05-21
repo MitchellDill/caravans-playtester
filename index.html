@@ -67,14 +67,13 @@
     				$genMenu($heroMenu2, mapNameProp(theEnemyParty), 'engage');
     			} else if ($(this).hasClass('attack')) {
     				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option move"><p class="move">' + hero1.inventory.equipped[0].move1.name + '</p></div>');
-    				$heroMenu2.append('<div class="option move"><p class="move">' + hero1.inventory.equipped[0].move2.name + '</p></div>');
+    				$genMenu($heroMenu2, runOnArray(currentHero.inventory.equipped, mapNameProp, 'move'), 'move');
     			} else if ($(this).hasClass('break')) {
     				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option break"><p class="break">Roll Break!</p></div>');
+    				$genMenu($heroMenu2, ['Roll Break!'], 'break');
     			} else if ($(this).hasClass('inv')) {
     				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option inv"><p class="inv">Your Inventory!</p></div>');
+    				$genMenu($heroMenu2, mapNameProp(currentHero.inventory), 'inv');
     			}
     		});
 

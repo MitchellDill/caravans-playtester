@@ -8,10 +8,30 @@ var genEngageOption = function(hero) {
 	}
 };
 
-var mapNameProp = function(arr) {
-	return arr.map(function(element) {
-		return element.name;
-	});
+var mapNameProp = function(arrOrObj, keyword) {
+	if (Array.isArray(arrOrObj)) {
+		return arrOrObj.map(function(element) {
+			return element.name;
+		});
+	} else {
+		var arr = [];
+		for (var prop in arrOrObj) {
+			if (prop.includes(keyword)) {
+				arr.push(arrOrObj[prop].name)
+			} else if (Array.isArray(arrOrObj[prop])) {
+				arr = arr.concat(mapNameProp(arrOrObj[prop], keyword));
+			}
+		};
+		return arr;
+	}
+};
+
+var runOnArray = function(arr, callback, parameter) {
+	var returnArr = [];
+	for (var i = 0; i < arr.length; i++) {
+		returnArr = returnArr.concat(callback(arr[i], parameter));
+	};
+	return returnArr;
 };
 
 var $genMenu = function(div, arr, option) {
