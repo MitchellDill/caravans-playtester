@@ -83,6 +83,18 @@ Hero.prototype.askCP = function(attemptedMove) {
 	} 
 };
 
+Hero.prototype.$engageEnemy = function(enemy) {
+	establishEngagement(this, enemy);
+	currentCombatMessage = this.name + ' engaged ' + enemy.name + ' in melee combat!';
+	$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
+};
+
+Hero.prototype.$disengageEnemy = function(enemy) {
+	establishEngagement(this, enemy, true);
+	currentCombatMessage = this.name + ' disengaged from their battle with ' + enemy.name + '.';
+	$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
+};
+
 //hero generation zone
 
 var heroMulholland = new Hero('Our Grave-Minded Quartermaster, Mulholland', 16, 'hardy');
@@ -334,16 +346,4 @@ var allStatuses = {
 
 
 
-
-//the combat and engagement object model
-//enemies will now keep track of the heroes they engage with in an array
-
-var theParty = [];
-var theEnemyParty = [];
-
-var establishEngagement = function(hero, enemy) {
-	hero.engaged = true;
-	enemy.engaged = true;
-	enemy.engagedTo.push(hero);
-};
 

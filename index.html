@@ -27,7 +27,6 @@
 
     		var hero1 = heroMulholland;
     		currentHero = hero1;
-    		//hero1.dice.push(startDice, startDice);
     		hero1.inventory.equipped.push(unwieldyGreatsword);
     		theParty.push(currentHero);
     		refreshDice(theParty);
@@ -39,6 +38,7 @@
     			'<div>Wielding: ' + hero1.inventory.equipped[0].name + '</div>');
 
     		populateBreakObjectWithEnemies();
+    		establishEngagement(hero1, enemy1);
 
 
 //gen hero's menu
@@ -56,13 +56,16 @@
     		$('#heroOptionsWindow1 div:eq(0)').first().text('Attack').addClass('attack');
     		$('#heroOptionsWindow1 div:eq(1)').first().text('Break').addClass('break');
     		$('#heroOptionsWindow1 div:eq(2)').first().text('Inventory').addClass('inv');
-    		$heroMenu1.prepend('<div class="option"><p class="engage">' + genEngageOption(hero1) + '</p></div>');
+    		$heroMenu1.prepend('<div class="option engage">' + genEngageOption(hero1) + '</div>');
 
 
     		$heroMenu2 = $('#heroOptionsWindow2');
 
     		$('div.option').on('click', function() {
-    			if ($(this).hasClass('attack')) {
+    			if ($(this).hasClass('engage')) {
+    				$heroMenu2.html('');
+    				$genMenu($heroMenu2, mapNameProp(theEnemyParty), 'engage');
+    			} else if ($(this).hasClass('attack')) {
     				$heroMenu2.html('');
     				$heroMenu2.append('<div class="option move"><p class="move">' + hero1.inventory.equipped[0].move1.name + '</p></div>');
     				$heroMenu2.append('<div class="option move"><p class="move">' + hero1.inventory.equipped[0].move2.name + '</p></div>');
@@ -75,9 +78,8 @@
     			}
     		});
 
-
-    		establishEngagement(hero1, enemy1);
-
+//hero menu functionality
+    		
     		var $clickMove = $(document).on('click', 'div.move>p', function() {
 				var moveText = $(this).text();
 				currentWeapon = findEquippedWeaponWithMove(moveText, currentHero);
@@ -92,7 +94,19 @@
 				chooseBreak(currentHero);
 				setTimeout('$printMessage()', messageDelay);
 				$updateMenuHeroStats();
-			})
+			});
+
+			var $clickEngage = $(document).on('click', 'div.engage>p', function() {
+				currentTarget = theEnemyParty[0];
+				if ($('#heroOptionsWindow1>div.engage').text() === 'Engage!') {
+					currentHero.$engageEnemy(currentTarget);
+				} else if ($('#heroOptionsWindow1>div.engage').text() === 'Disengage!') {
+					currentHero.$disengageEnemy(currentTarget);
+				}
+				$printMessage();
+				$updateMenuHeroStats();
+				$heroMenu2.html('');
+			});
 
 
 

@@ -8,6 +8,18 @@ var genEngageOption = function(hero) {
 	}
 };
 
+var mapNameProp = function(arr) {
+	return arr.map(function(element) {
+		return element.name;
+	});
+};
+
+var $genMenu = function(div, arr, option) {
+	arr.forEach(function(element) {
+		div.append('<div class="option ' + option + '"><p class="' + option + '">' + element + '</p></div>')
+	});
+};
+
 var genStamMeter = function(hero) {
 	$('div#heroStam>meter').attr('max', hero.maxStam)
 		.attr('min', 0)
@@ -41,6 +53,29 @@ var pushYourDice = function(hero) {
 		hero.dice.push(die);
 	});
 };	
+
+
+//the engagement model and options
+//enemies will now keep track of the heroes they engage with in an array
+
+var theParty = [];
+var theEnemyParty = [];
+
+var establishEngagement = function(hero, enemy, disengage) {
+	if (disengage) {
+		hero.engaged = false;
+		enemy.engagedTo = enemy.engagedTo.filter(function(element, index) {
+			return (!hero);
+		});
+		//trigger attack of opportunity
+	} else {
+		hero.engaged = true;
+		enemy.engaged = true;
+		enemy.engagedTo.push(hero);
+	}
+};
+
+
 
 //attack flow functions
 
@@ -207,7 +242,7 @@ var addBreak = function(hero, target, breakDiceResult) {
 	breakDiceResult.forEach(function(die) {
 		target.breakDiceCurrent.push(die);
 		currentCombatMessage = target.name + ' is ' + 
-			(target.breakThresh - target.breakDiceTotal()) + ' away from break.';
+			(target.breakThresh - target.breakDiceTotal()) + ' away from breaking.';
 	});
 	if (target.breakDiceTotal() >= target.breakThresh) {
 		target.broken = true;
@@ -231,6 +266,8 @@ var InitiateBreak = function(brokenEnemy) {
 	});
 	brokenEnemy.breakDiceCurrent = [];
 };
+
+
 
 
 //combat feed print
