@@ -1,3 +1,27 @@
+
+//dice
+
+var Dice = function() {
+	this.sides = [];
+	for (var i = 0; i < arguments.length; i++) {
+		this.sides.push(arguments[i]);
+	};
+};
+
+Dice.prototype.roll = function() {
+	return this.sides[Math.floor(Math.random() * this.sides.length)];
+}
+
+var startDice = new Dice(0, 1, 2);
+var midDice = new Dice(0, 1, 1, 2, 2, 3);
+var endDice = new Dice(1, 2, 3);
+var enemyDice = new Dice('basic', 'basic', 'basic', 'specialized', 'specialized', 'advanced');
+var ultDice = new Dice(0, 1, 1, 1, 1, 2);
+var sixDice = new Dice(1, 2, 3, 4, 5, 6);
+
+
+
+
 //traits
 
 var allTraits = {
@@ -34,10 +58,13 @@ var Hero = function(name, stam, trait) {
 	this.engaged = false;
 	this.rollBonus = 0;
 	this.dice = [];
+	this.diceStrength = [startDice, startDice];
 	this.inventory = {
 		equipped : [],
 		unequipped : []
 	};
+	this.breakDiceOn = {};
+	this.turnTaken = false;
 
 	allHeroes.push(this);
 }
@@ -50,9 +77,9 @@ Hero.prototype.checkRoll = function(move, diceResults) {
 };
 
 Hero.prototype.askCP = function(attemptedMove) {
-	if (!this.gainedCP && attemptedMove) {
+	if ((!this.gainedCP) && attemptedMove) {
 		this.gainedCP = true;
-		return this.CP += 1;
+		return this.cp += 1;
 	} 
 };
 
@@ -79,7 +106,6 @@ var allMoves = {
 };
 
 var costCeiling = 7;
-
 (function (allMoves, costCeiling) {
 	for (var weapon in allMoves) {
 		for (var i = 0; i < costCeiling + 1; i++) {
@@ -187,27 +213,6 @@ var unwieldyGreatsword = new Weapon('Unwieldy Greatsword', 'sword', 3, true, 99,
 
 
 
-//dice
-
-var Dice = function() {
-	this.sides = [];
-	for (var i = 0; i < arguments.length; i++) {
-		this.sides.push(arguments[i]);
-	};
-};
-
-Dice.prototype.roll = function() {
-	return this.sides[Math.floor(Math.random() * this.sides.length)];
-}
-
-var startDice = new Dice(0, 1, 2);
-var midDice = new Dice(0, 1, 1, 2, 2, 3);
-var endDice = new Dice(1, 2, 3);
-var enemyDice = new Dice('basic', 'basic', 'basic', 'specialized', 'specialized', 'advanced');
-var ultDice = new Dice(0, 1, 1, 1, 1, 2);
-var sixDice = new Dice(1, 2, 3, 4, 5, 6);
-
-
 
 
 //enemy cards
@@ -234,6 +239,7 @@ var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.statuses = [];
 	this.ultCharge = 0;
 	this.reward = [];
+	this.turnTaken = false;
 
 	allEnemies[region][tier].push(this);
 };
@@ -284,7 +290,7 @@ enemyMurkman.moveset = {
 		})
 	}, 
 	ultFiresOn : 3,
-	ultimateText : 'If heroes cannot roll a 4 or higher on a six-sided die, they\'ll be affliceted by bogrot!',
+	ultimateText : 'If heroes cannot roll a 4 or higher on a six-sided die, they\'ll be afflicted by bogrot!',
 	hasOppo : true,
 	oppo : function() {return [1]},
 	oppoText : 'Disengaging from the ' + this.name + 'will cause a hero to take 1 damage--this effect then ripples through the ranks of all' + 
@@ -330,6 +336,7 @@ var allStatuses = {
 
 
 //the combat and engagement object model
+//enemies will now keep track of the heroes they engage with in an array
 
 var theParty = [];
 var theEnemyParty = [];

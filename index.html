@@ -19,28 +19,37 @@
     		theEnemyParty.push(enemy1);
     		$('div#unengagedEnemies').append('<div class=enemy><p>' + enemy1.name + '</p></div');
     		$('.enemy').append('<div class="statWindow">' + 
-    			'<div class="enemyStam">Stamina: ' + enemy1.stam + '/' + enemy1.maxStam + '</div>' +
-    			'<div>Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>');
+    			'<div class="enemyStam">Stamina: ' + theEnemyParty[0].stam + '/' + 
+    			  theEnemyParty[0].maxStam + '</div>' +
+    			'<div>Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>' + 
+    			'<div class="enemyBreak">Break Dice: ' + enemy1.breakDiceCurrent + '</div>' + 
+    			'<div class="enemyBreak">Break Threshold: ' + enemy1.breakThresh + '</div>');
 
     		var hero1 = heroMulholland;
     		currentHero = hero1;
-    		hero1.dice.push(startDice, startDice);
+    		//hero1.dice.push(startDice, startDice);
     		hero1.inventory.equipped.push(unwieldyGreatsword);
-    		theParty.push(hero1);
+    		theParty.push(currentHero);
+    		refreshDice(theParty);
+
     		$('div#unengagedHeroes').append('<div class=hero><p>' + hero1.name + '</p></div');
     		$('.hero').append('<div class="statWindow">' + 
     			'<div>Stamina: ' + hero1.stam + '/' + hero1.maxStam + '</div>' +
     			'<div id="menuDiceHeld">Dice Held: ' + hero1.dice.length + '</div>' + 
     			'<div>Wielding: ' + hero1.inventory.equipped[0].name + '</div>');
 
+    		populateBreakObjectWithEnemies();
+
 
 //gen hero's menu
 
     		$menuHeroName = $('#heroName');
     		$menuHeroName.append('<p>' + hero1.name + '</p>');
+    		$('div#heroStam>p').text('Stamina: ' + currentHero.stam + '/' + currentHero.maxStam);
     		genStamMeter(hero1);
     		$('#heroPortrait').append('<image src="badmully.png" class="center" />');
     		$('#heroDice').append('<p>' + hero1.dice.length + ' dice available</p>');
+    		$updateMenuHeroStats();
 
 
     		$heroMenu1 = $('#heroOptionsWindow1');
@@ -59,22 +68,31 @@
     				$heroMenu2.append('<div class="option move"><p class="move">' + hero1.inventory.equipped[0].move2.name + '</p></div>');
     			} else if ($(this).hasClass('break')) {
     				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option"><p>Roll Break!</p></div>');
+    				$heroMenu2.append('<div class="option break"><p class="break">Roll Break!</p></div>');
     			} else if ($(this).hasClass('inv')) {
     				$heroMenu2.html('');
-    				$heroMenu2.append('<div class="option"><p>Your Inventory!</p></div>');
+    				$heroMenu2.append('<div class="option inv"><p class="inv">Your Inventory!</p></div>');
     			}
     		});
 
 
     		establishEngagement(hero1, enemy1);
 
-    		$(document).on('click', 'div.move>p', function() {
+    		var $clickMove = $(document).on('click', 'div.move>p', function() {
 				var moveText = $(this).text();
 				currentWeapon = findEquippedWeaponWithMove(moveText, currentHero);
 				currentMove = findWhichMoveWithName(moveText, currentWeapon);
-				chooseMove(currentMove, currentHero);
+				currentHero.askCP(chooseMove(currentMove, currentHero));
+
+				setTimeout('$printMessage()', messageDelay);
+				$updateMenuHeroStats();
 			});
+
+			var $clickBreak = $(document).on('click', 'div.break>p', function() {
+				chooseBreak(currentHero);
+				setTimeout('$printMessage()', messageDelay);
+				$updateMenuHeroStats();
+			})
 
 
 
@@ -122,20 +140,20 @@
     	<div id="menu">
     		<div id ="heroStats">
     			<div id="heroStam">
-    				<p>Stamina</p>
+    				<p>Stamina: </p>
     				<meter class="statMeters"></meter>
     			</div>
     			<div id="heroCP">
     				<p>CP</p>
-    				<p>3</p>
+    				<p></p>
     			</div>
     			<div id="heroGuard">
     				<p>Guard</p>
-    				<p>0</p>
+    				<p></p>
     			</div>
     			<div id="heroArmor">
     				<p>Armor</p>
-    				<p>0</p>
+    				<p></p>
     			</div>
     		</div>
     		<div id="heroDisplay">

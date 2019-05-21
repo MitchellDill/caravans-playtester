@@ -272,3 +272,16 @@ div.enemy:hover .statWindow, div.hero:hover .statWindow{
 	visibility: visible;
 	opacity: 1;
 }
+
+p.message {
+	margin-bottom: 5px;
+
+}
+
+p.damage {
+	color: red;
+}
+
+p.hit {
+	color: yellow;
+}

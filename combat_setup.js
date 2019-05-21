@@ -17,6 +17,31 @@ var genStamMeter = function(hero) {
 		.attr('value', hero.stam);
 };
 
+//combat setup
+
+var populateBreakObjectWithEnemies = function() {
+	theParty.forEach(function(hero) {
+		theEnemyParty.forEach(function(enemy) {
+			var enemyName = enemy.name;
+			hero.breakDiceOn[enemyName] = [];
+		});
+	})
+};
+
+var refreshDice = function(heroOrParty) {
+	if (Array.isArray(heroOrParty)) {
+		heroOrParty.forEach(pushYourDice)
+	} else {
+		pushYourDice(heroOrParty);
+	}
+}
+
+var pushYourDice = function(hero) {
+	hero.diceStrength.forEach(function(die) {
+		hero.dice.push(die);
+	});
+};	
+
 //attack flow functions
 
 //choose move
@@ -30,17 +55,8 @@ var currentDice;
 var currentDiceResult;
 var currentCombatMessage;
 
-/*
-var findWeaponWithMove = function(move, hero) {
-	for (var i = 0; i < hero.inventory.equipped.length; i++) {
-		if (hero.inventory.equipped[i][move]) {
-			return hero.inventory.equipped[i];
-		}
-	};
-};
-*/
+var messageDelay;
 
-//need to access all actual moves above, doesn't access correct property level
 
 var findEquippedWeaponWithMove = function(moveName, currentHero) {
 	var currentEquip = currentHero.inventory.equipped;
@@ -71,11 +87,11 @@ var returnEngagedEnemy = function(hero) {
 	};
 };
 
-//need to address below function so that it grabs correct parts of move object--hard to do in console
 
 
 
 var chooseMove = function(move, hero) {
+	messageDelay = 0;
 	if (move.enemy) {
 		if (!move.ranged) {
 			currentTarget = returnEngagedEnemy(hero);
@@ -84,20 +100,28 @@ var chooseMove = function(move, hero) {
 		}
 		//select which dice to roll
 		currentDice = hero.dice;
-		//set currentDice = selectedDice
 		currentDiceResult = rollDiceIntoArray(currentDice);
-		currentDice = [];
-		$('div#menuDiceHeld').text('Dice Held: ' + hero.dice.length);
+
+		//currentDice, hero.dice = [];
+
+		$updateTooltipHeroDice(hero);
 		
 		if (hero.checkRoll(move, currentDiceResult)) {
 			currentCombatMessage = 'Success! ' + hero.name + ' rolled a ' + 
-			currentDiceResult.reduce(arrayAsSingleValue) + '!';
+			currentDiceResult.reduce(arrayAsSingleValue) + '.';
+			$printMessage(currentCombatMessage);
+
 			currentTargetDamage = move.attack(currentTarget, currentWeapon, currentHero);
 			dealDamage(currentTarget, currentTargetDamage);
+
+			currentCombatMessage = currentTarget.name + ' was dealt ' + currentTargetDamage + ' damage!';
+			messageDelay = 420;
+
 			$updateTooltip('enemy', 'stam');
+
 		} else {
 			currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
-			currentDiceResult.reduce(arrayAsSingleValue) + '!';
+			currentDiceResult.reduce(arrayAsSingleValue, 0) + '!';
 			return false;
 		}
 
@@ -130,9 +154,11 @@ var dealDamage = function(target, damage) {
 	if (target.armor > 0) {
 		damage -= target.armor;
 	}
+	currentTargetDamage = damage;
 	target.stam -= damage;
 	return target.stam;
 };
+
 
 var rollDiceIntoArray = function(diceArr) {
 	var arr = [];
@@ -147,11 +173,101 @@ var arrayAsSingleValue = function(accum, current) {
 };
 
 
+//break stuff
+
+
+var chooseBreak = function(hero) {
+
+	messageDelay = 0;
+	currentTarget = returnEngagedEnemy(hero);
+	if (currentTarget.broken) {
+		currentCombatMessage = currentTarget.name + ' is already broken.'; 
+	} else {
+		currentDice = hero.dice;
+		currentDiceResult = rollDiceIntoArray(currentDice);
+		currentCombatMessage = hero.name + ' rolled ' + currentDiceResult + ' as break dice onto ' + currentTarget.name + '.';
+		$printMessage(currentCombatMessage);
+		
+		addBreak(hero, currentTarget, currentDiceResult);
+
+		//currentDice, hero.dice = [];
+		messageDelay = 420;
+		
+	}
+	$updateTooltipHeroDice(hero);
+	$updateTooltip('enemy', 'stam'); 
+};
+
+var addBreak = function(hero, target, breakDiceResult) {
+	currentTargetDamage = breakDiceResult;
+	var targetName = target.name
+	currentDice.forEach(function(die) {
+		hero.breakDiceOn[targetName].push(die);
+	});
+	breakDiceResult.forEach(function(die) {
+		target.breakDiceCurrent.push(die);
+		currentCombatMessage = target.name + ' is ' + 
+			(target.breakThresh - target.breakDiceTotal()) + ' away from break.';
+	});
+	if (target.breakDiceTotal() >= target.breakThresh) {
+		target.broken = true;
+		currentCombatMessage = 'Break!';
+		InitiateBreak(target);
+	}
+};
+
+var InitiateBreak = function(brokenEnemy) {
+	var enemyName = brokenEnemy.name;
+	theParty.forEach(function(hero) {
+		if (hero.breakDiceOn[enemyName]) {
+			refreshDice(hero);
+			hero.breakDiceOn[enemyName].forEach(function(die) {
+				hero.dice.push(die);
+				
+			});
+			hero.breakDiceOn[enemyName] = [];
+			hero.turnTaken = false;
+		}
+	});
+	brokenEnemy.breakDiceCurrent = [];
+};
+
+
+//combat feed print
+
+var $printMessage = function(message) {
+	$('div#feed').prepend('<p class="message">' + currentCombatMessage + '</p>');
+	if (currentCombatMessage.includes('damage') && currentTargetDamage > 0) {
+		$('div#feed>p.message:first').addClass('damage');
+	}
+};
+
+
 
 // combat cleanup functions follow
 
 
+var $updateTooltipHeroDice = function(hero) {
+	$('div#menuDiceHeld').text('Dice Held: ' + hero.dice.length);
+}
+
 var $updateTooltip = function(unitType, stat) {
-	var className = '' + unitType + stat.slice(0, 1).toUpperCase() + stat.slice(1); 
-	$('div.' + className).text(stat + ': ' + theEnemyParty[0].stam + '/' + theEnemyParty[0].maxStam);
+	var statName = stat.slice(0, 1).toUpperCase() + stat.slice(1)
+	var className = '' + unitType + statName; 
+	if (statName === 'Stam') {
+		statName += 'ina';
+	}
+	$('div.' + className).text(statName + ': ' + theEnemyParty[0][stat] + '/' + theEnemyParty[0].maxStam);
+	$('div.enemyBreak:first').text('Break Dice: ' + theEnemyParty[0].breakDiceCurrent); 
 };
+
+
+var $updateMenuHeroStats = function() {
+	$('div#heroStam>p').text('Stamina: ' + currentHero.stam + '/' + currentHero.maxStam);
+	genStamMeter(currentHero);
+	$('div#heroCP>p:nth-child(2)').text(currentHero.cp);
+	$('div#heroGuard>p:nth-child(2)').text(currentHero.guard);
+	$('div#heroArmor>p:nth-child(2)').text(currentHero.armor);
+	$('#heroDice>p').text(currentHero.dice.length + ' dice available');
+};
+
