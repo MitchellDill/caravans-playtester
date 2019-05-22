@@ -136,11 +136,13 @@ div {
 }
 
 #enemyBattleground {
-
 }
 
-div#partyBattleground>div#unengagedHeroes {
-
+#engagedEnemies>p, #engagedHeroes>p {
+	font-size: 44px;
+	opacity: .2;
+	text-align: center;
+	margin-top: 50px;
 }
 
 #heroStats {
@@ -200,11 +202,31 @@ div#heroPortrait {
 	border: none;
 }
 
-#heroOptionsWindow3 {
+div#heroOptionsWindow3 {
 	float: left;
 	width: 15%;
 	height: 15%;
 	border: none;
+	text-align: center;
+	padding: 5px 2px;
+}
+
+div#diceChosen {
+	text-align: center;
+	padding: 3px 2px;
+	border-radius: 1px;
+}
+
+#diceChosenSubmit {
+	margin-top: 6px;
+	margin-bottom: 6px;
+	background-color: gold;
+	color: purple;
+}
+
+#diceChosenSubmit:hover {
+	background-color: purple;
+	color: white;
 }
 
 div.option {
@@ -292,3 +314,10 @@ p.damage {
 p.hit {
 	color: yellow;
 }
+
+.engagedHero {
+	transform: translate(0px, -142px);
+}
+
+
+

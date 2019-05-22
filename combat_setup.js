@@ -170,7 +170,7 @@ var chooseMove = function(move, hero) {
 		
 		if (hero.checkRoll(move, currentDiceResult)) {
 			currentCombatMessage = 'Success! ' + hero.name + ' rolled a ' + 
-			currentDiceResult.reduce(arrayAsSingleValue) + '.';
+			currentDiceResult.reduce(arrayAsSingleValue, 0) + '.';
 			$printMessage(currentCombatMessage);
 
 			currentTargetDamage = move.attack(currentTarget, currentWeapon, currentHero);
@@ -297,7 +297,7 @@ var InitiateBreak = function(brokenEnemy) {
 
 var $chooseDice = function() {
 	$('div#heroOptionsWindow3').remove();
-	$('div#menu').append('<div id="heroOptionsWindow3"><p>How many Dice?</p></div>');
+	$('div#menu').append('<div id="heroOptionsWindow3"><p>Roll which dice?</p></div>');
 	$('div#heroOptionsWindow3').append('<div><form id="diceChosen"></form></div>');
 	$genDiceForm(currentHero);
 };
@@ -306,12 +306,12 @@ var $genDiceForm = function(hero) {
 	var str = '<form id="diceChosen">';
 	for (var i = 0; i < hero.dice.length; i++) {
 		str += ('<input type="checkbox" name="dice' + i + '" value="' + 
-		hero.dice[i].name + '">' + hero.dice[i].name + '<br>'); 
+		hero.dice[i].name + '">' + hero.dice[i].name + ' (' + hero.dice[i].sides + ')<br>'); 
 	};
 	str += '</form>';
 	$('form#diceChosen').html(str);
-	$('form#diceChosen').append('<input id= "diceChosenSubmit" class="button" type="button" value="submit" ' + 
-		' />Roll!');
+	$('form#diceChosen').append('<input id="diceChosenSubmit" class="button" type="button" value="Roll!" ' + 
+		' />');
 };
 
 var setCurrentDice = function() {
@@ -397,9 +397,10 @@ var $updateTooltip = function(unitType, stat) {
 var $updateMenuHeroStats = function() {
 	$('div#heroStam>p').text('Stamina: ' + currentHero.stam + '/' + currentHero.maxStam);
 	genStamMeter(currentHero);
-	$('div#heroCP>p:nth-child(2)').text(currentHero.cp);
-	$('div#heroGuard>p:nth-child(2)').text(currentHero.guard);
-	$('div#heroArmor>p:nth-child(2)').text(currentHero.armor);
+	$('div#heroCP>p>span').text(currentHero.cp);
+	$('div#heroGuard>p>span').text(currentHero.guard);
+	$('div#heroArmor>p>span').text(currentHero.armor);
+	$('div#heroStatus>p>span').text(currentHero.getStatus());
 	$('#heroDice>p').text(currentHero.dice.length + ' dice available');
 };
 

@@ -38,7 +38,6 @@
     			'<div>Wielding: ' + hero1.inventory.equipped[0].name + '</div>');
 
     		populateBreakObjectWithEnemies();
-    		establishEngagement(hero1, enemy1);
 
 
 //gen hero's menu
@@ -102,8 +101,16 @@
 				};
 				if ($('#heroOptionsWindow1>div.engage').text() === 'Engage!') {
 					currentHero.$engageEnemy(currentTarget);
+					if($('div#unengagedHeroes>div.hero>p').text() === currentHero.name) {
+						$('div#unengagedHeroes>div.hero').addClass('engagedHero');
+					}
+
 				} else if ($('#heroOptionsWindow1>div.engage').text() === 'Disengage!') {
 					currentHero.$disengageEnemy(currentTarget);
+					if($('div#unengagedHeroes>div.hero>p').text() === currentHero.name) {
+						$('div#unengagedHeroes>div.hero').removeClass('engagedHero');
+					}
+
 				}
 				$printMessage();
 				$updateMenuHeroStats();
@@ -144,11 +151,13 @@
     		</div>
 
     		<div id="engagedEnemies">
+    			<p>ENGAGED ENEMIES</p>
     		</div>
     	</section>
 
    		<section id ="partyBattleground" class="hero">
    			<div id="engagedHeroes">
+   				<p>ENGAGED HEROES</p>
     		</div>
 
     		<div id="unengagedHeroes">
@@ -174,16 +183,16 @@
     				<meter class="statMeters"></meter>
     			</div>
     			<div id="heroCP">
-    				<p>CP</p>
-    				<p></p>
+    				<p>CP: <span class="cp"></span></p>
     			</div>
     			<div id="heroGuard">
-    				<p>Guard</p>
-    				<p></p>
+    				<p>Guard: <span class="guard"></span></p>
     			</div>
     			<div id="heroArmor">
-    				<p>Armor</p>
-    				<p></p>
+    				<p>Armor: <span class="armor"></span></p>
+    			</div>
+    			<div id="heroStatus">
+    				<p>Status: <span class="status"></span></p>
     			</div>
     		</div>
     		<div id="heroDisplay">

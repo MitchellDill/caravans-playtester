@@ -88,6 +88,18 @@ Hero.prototype.askCP = function(attemptedMove) {
 	} 
 };
 
+Hero.prototype.getStatus = function() {
+	if (this.stam <= 0) {
+		return 'Dead as hell';
+	} else if (!this.statusEffect) {
+		return 'Healthy';
+	} else  {
+		return 'Has ' + this.statuses.reduce(function(accum, current) {
+			accum + ', and ' + current;
+		}, '');
+	}
+};
+
 Hero.prototype.$engageEnemy = function(enemy) {
 	establishEngagement(this, enemy);
 	currentCombatMessage = this.name + ' engaged ' + enemy.name + ' in melee combat!';
