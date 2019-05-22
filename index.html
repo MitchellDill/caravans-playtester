@@ -56,7 +56,8 @@
     		$('#heroOptionsWindow1 div:eq(0)').first().text('Attack').addClass('attack');
     		$('#heroOptionsWindow1 div:eq(1)').first().text('Break').addClass('break');
     		$('#heroOptionsWindow1 div:eq(2)').first().text('Inventory').addClass('inv');
-    		$heroMenu1.prepend('<div class="option engage">' + genEngageOption(hero1) + '</div>');
+    		$heroMenu1.prepend('<div class="option engage">' + genEngageOption(hero1) + 
+    			'</div>');
 
 
     		$heroMenu2 = $('#heroOptionsWindow2');
@@ -80,23 +81,25 @@
 //hero menu functionality
     		
     		var $clickMove = $(document).on('click', 'div.move>p', function() {
-				var moveText = $(this).text();
-				currentWeapon = findEquippedWeaponWithMove(moveText, currentHero);
-				currentMove = findWhichMoveWithName(moveText, currentWeapon);
-				currentHero.askCP(chooseMove(currentMove, currentHero));
-
-				setTimeout('$printMessage()', messageDelay);
-				$updateMenuHeroStats();
+    			currentMove = 'move'
+				currentMoveText = $(this).text();
+				$chooseDice();
+				
 			});
 
 			var $clickBreak = $(document).on('click', 'div.break>p', function() {
-				chooseBreak(currentHero);
-				setTimeout('$printMessage()', messageDelay);
-				$updateMenuHeroStats();
+				currentMove = 'break';
+				$chooseDice();
 			});
 
+
 			var $clickEngage = $(document).on('click', 'div.engage>p', function() {
-				currentTarget = theEnemyParty[0];
+				$('div#heroOptionsWindow3').remove();
+				for (var i = 0; i < theEnemyParty.length; i++) {
+					if ($(this).text() === theEnemyParty[i].name) {
+						currentTarget = theEnemyParty[i];
+					}
+				};
 				if ($('#heroOptionsWindow1>div.engage').text() === 'Engage!') {
 					currentHero.$engageEnemy(currentTarget);
 				} else if ($('#heroOptionsWindow1>div.engage').text() === 'Disengage!') {
@@ -107,6 +110,20 @@
 				$heroMenu2.html('');
 			});
 
+			var $clickInv = $(document).on('click', 'div.inv>p', function() {
+				$('div#heroOptionsWindow3').remove();
+				currentHero.inventory.equipped.forEach(function(weapon) {
+					if ($('#heroOptionsWindow2>div.inv>p').text() === weapon.name) {
+						currentWeapon = weapon;
+						$heroMenu2.html('');
+						$genMenu($heroMenu2, mapNameProp(currentWeapon, 'move'), 'move');
+					}
+				})		
+			});
+
+			var $clickDiceSubmit = $(document).on('click', '#diceChosenSubmit', function() {
+				setCurrentDice();
+			});
 
 
     	})

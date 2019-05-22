@@ -13,12 +13,17 @@ Dice.prototype.roll = function() {
 }
 
 var startDice = new Dice(0, 1, 2);
+startDice.name = "Starter Die";
 var midDice = new Dice(0, 1, 1, 2, 2, 3);
+midDice.name = "Mid Die";
 var endDice = new Dice(1, 2, 3);
+endDice.name = "Endgame Die";
 var enemyDice = new Dice('basic', 'basic', 'basic', 'specialized', 'specialized', 'advanced');
+enemyDice.name = "Enemy Die";
 var ultDice = new Dice(0, 1, 1, 1, 1, 2);
+ultDice.name = "Ult Die";
 var sixDice = new Dice(1, 2, 3, 4, 5, 6);
-
+sixDice.name = "Six-sided Die";
 
 
 
@@ -94,6 +99,7 @@ Hero.prototype.$disengageEnemy = function(enemy) {
 	currentCombatMessage = this.name + ' disengaged from their battle with ' + enemy.name + '.';
 	$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
 };
+
 
 //hero generation zone
 

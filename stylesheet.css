@@ -200,6 +200,13 @@ div#heroPortrait {
 	border: none;
 }
 
+#heroOptionsWindow3 {
+	float: left;
+	width: 15%;
+	height: 15%;
+	border: none;
+}
+
 div.option {
 	text-align: center;
 	padding: 5px 2px;

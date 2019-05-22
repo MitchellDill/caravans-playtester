@@ -38,6 +38,7 @@ var $genMenu = function(div, arr, option) {
 	arr.forEach(function(element) {
 		div.append('<div class="option ' + option + '"><p class="' + option + '">' + element + '</p></div>')
 	});
+	$('#heroOptionsWindow3').remove();
 };
 
 var genStamMeter = function(hero) {
@@ -106,9 +107,10 @@ var currentHero;
 var currentTarget;
 var currentWeapon;
 var currentTargetDamage;
-var currentDice;
+var currentDice = [];
 var currentDiceResult;
 var currentCombatMessage;
+var currentMoveText;
 
 var messageDelay;
 
@@ -140,6 +142,7 @@ var returnEngagedEnemy = function(hero) {
 			}
 		};
 	};
+	return null;
 };
 
 
@@ -150,15 +153,19 @@ var chooseMove = function(move, hero) {
 	if (move.enemy) {
 		if (!move.ranged) {
 			currentTarget = returnEngagedEnemy(hero);
+				if (currentTarget === null) {
+					currentCombatMessage = 'You must first engage in melee combat to use ' + 
+					move.name + '.';
+					return false;
+				}
 		} else if (move.ranged) {
 			currentTarget;
 		}
 		//select which dice to roll
-		currentDice = hero.dice;
 		currentDiceResult = rollDiceIntoArray(currentDice);
 
-		//currentDice, hero.dice = [];
-
+		$('#heroOptionsWindow2').html('');
+		$('#heroOptionsWindow3').remove(); 
 		$updateTooltipHeroDice(hero);
 		
 		if (hero.checkRoll(move, currentDiceResult)) {
@@ -179,14 +186,6 @@ var chooseMove = function(move, hero) {
 			currentDiceResult.reduce(arrayAsSingleValue, 0) + '!';
 			return false;
 		}
-
-		//if (hero.checkDice(move, diceResult))
-		//print diceResult
-		//set dice avail
-		
-		//else print diceResult + fail 
-		//set dice avail
-		//end
 
 
 	}
@@ -235,10 +234,14 @@ var chooseBreak = function(hero) {
 
 	messageDelay = 0;
 	currentTarget = returnEngagedEnemy(hero);
+	if (currentTarget === null) {
+		currentCombatMessage = 'You must first engage in melee combat to use break.';
+		return false;
+				}
 	if (currentTarget.broken) {
 		currentCombatMessage = currentTarget.name + ' is already broken.'; 
 	} else {
-		currentDice = hero.dice;
+		//currentDice = hero.dice;
 		currentDiceResult = rollDiceIntoArray(currentDice);
 		currentCombatMessage = hero.name + ' rolled ' + currentDiceResult + ' as break dice onto ' + currentTarget.name + '.';
 		$printMessage(currentCombatMessage);
@@ -250,7 +253,9 @@ var chooseBreak = function(hero) {
 		
 	}
 	$updateTooltipHeroDice(hero);
-	$updateTooltip('enemy', 'stam'); 
+	$updateTooltip('enemy', 'stam');
+	$('#heroOptionsWindow2').html('');
+	$('#heroOptionsWindow3').remove(); 
 };
 
 var addBreak = function(hero, target, breakDiceResult) {
@@ -288,6 +293,76 @@ var InitiateBreak = function(brokenEnemy) {
 };
 
 
+//dice choice and submission
+
+var $chooseDice = function() {
+	$('div#heroOptionsWindow3').remove();
+	$('div#menu').append('<div id="heroOptionsWindow3"><p>How many Dice?</p></div>');
+	$('div#heroOptionsWindow3').append('<div><form id="diceChosen"></form></div>');
+	$genDiceForm(currentHero);
+};
+
+var $genDiceForm = function(hero) {
+	var str = '<form id="diceChosen">';
+	for (var i = 0; i < hero.dice.length; i++) {
+		str += ('<input type="checkbox" name="dice' + i + '" value="' + 
+		hero.dice[i].name + '">' + hero.dice[i].name + '<br>'); 
+	};
+	str += '</form>';
+	$('form#diceChosen').html(str);
+	$('form#diceChosen').append('<input id= "diceChosenSubmit" class="button" type="button" value="submit" ' + 
+		' />Roll!');
+};
+
+var setCurrentDice = function() {
+	var form = document.getElementById('diceChosen');
+	var	diceCheckArr = currentHero.dice.slice(0).map(function(element, index) {
+		var diceName = 'dice' + index;
+		if (returnCheckBox(form.elements[diceName])) {
+			if (element.name === form.elements[diceName].value) {
+				currentDice[index] = element;
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}		
+	});
+	currentHero.dice = currentHero.dice.filter(function(element, index) {
+		return (diceCheckArr[index]) ? false : true;
+	});
+		if (currentMove === 'move') {
+			$clickSubmitMove();
+		} else if (currentMove === 'break') {
+			$clickSubmitBreak();
+		}
+};
+
+var returnCheckBox = function(checkbox) {
+	if (checkbox.checked) {
+		return true;
+	} else {
+		return false;
+	}
+};
+
+var $clickSubmitMove = function() {
+	currentWeapon = findEquippedWeaponWithMove(currentMoveText, currentHero);
+	currentMove = findWhichMoveWithName(currentMoveText, currentWeapon);
+	currentHero.askCP(chooseMove(currentMove, currentHero));
+	setTimeout('$printMessage()', messageDelay);
+	$updateMenuHeroStats();
+	emptyDice();
+};
+
+
+var $clickSubmitBreak = function() {
+	chooseBreak(currentHero);
+	setTimeout('$printMessage()', messageDelay);
+	$updateMenuHeroStats();
+	emptyDice();
+};
 
 
 //combat feed print
@@ -328,3 +403,6 @@ var $updateMenuHeroStats = function() {
 	$('#heroDice>p').text(currentHero.dice.length + ' dice available');
 };
 
+var emptyDice= function() {
+	currentDice = [];
+};
