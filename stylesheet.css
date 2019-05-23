@@ -319,5 +319,9 @@ p.hit {
 	transform: translate(0px, -142px);
 }
 
+div.pass:nth-child(1) {
+	color: red;
+}
+
 
 

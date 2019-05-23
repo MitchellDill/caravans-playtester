@@ -73,8 +73,11 @@ var refreshDice = function(heroOrParty) {
 var pushYourDice = function(hero) {
 	if (hero.stam > 0) {
 		hero.turnTaken = false;
+		hero.engagedThisTurn = false;
 		hero.diceStrength.forEach(function(die) {
-			hero.dice.push(die);
+			if (hero.dice.length != hero.diceStrength.length) {
+				hero.dice.push(die);
+			}
 		});
 		$updateTooltipHeroDice(hero);
 	}
@@ -88,25 +91,33 @@ var theParty = [];
 var theEnemyParty = [];
 
 var establishEngagement = function(hero, enemy, disengage) {
-	if (disengage) {
-		hero.engaged = false;
-		enemy.engagedTo = enemy.engagedTo.filter(function(element, index) {
-			return element != hero;
-		});
-		if (enemy.moveset.hasOppo) {
-			$printMessage(enemy.moveset.oppoText);
-			currentTargetDamage = enemy.moveset.oppo.call(enemy);
-			if (typeof currentTargetDamage === 'number') {
-				dealDamage(hero, currentTargetDamage);
+	if (!hero.engagedThisTurn) {
+		hero.engagedThisTurn = true;
+		if (disengage) {
+			hero.engaged = false;
+			enemy.engagedTo = enemy.engagedTo.filter(function(element, index) {
+				return element != hero;
+			});
+			if (enemy.moveset.hasOppo) {
+				currentCombatMessage = enemy.moveset.oppoText;
+				currentTargetDamage = enemy.moveset.oppo.call(enemy);
+				if (typeof currentTargetDamage === 'number') {
+					dealDamage(hero, currentTargetDamage);
+				}
 			}
-		}
-		if (enemy.engagedTo.length === 0) {
-			enemy.engaged = false;
+			if (enemy.engagedTo.length === 0) {
+				enemy.engaged = false;
+				return true;
+			}
+		} else {
+			hero.engaged = true;
+			enemy.engaged = true;
+			enemy.engagedTo.push(hero);
+			return true;
 		}
 	} else {
-		hero.engaged = true;
-		enemy.engaged = true;
-		enemy.engagedTo.push(hero);
+		currentCombatMessage = 'You can\'t engage or disengage both in a single turn, partner.';
+		return false;
 	}
 };
 
@@ -241,7 +252,9 @@ var dealDamage = function(target, damage) {
 var rollDiceIntoArray = function(diceArr) {
 	var arr = [];
 	for (var i = 0; i < diceArr.length; i++) {
-		arr.push(diceArr[i].roll());
+		if (diceArr[i] != undefined) {
+			arr.push(diceArr[i].roll());
+		}
 	};
 	return arr;
 };
@@ -307,7 +320,6 @@ var InitiateBreak = function(brokenEnemy) {
 				
 			});
 			hero.breakDiceOn[enemyName] = [];
-			hero.turnTaken = false;
 		}
 	});
 	brokenEnemy.breakDiceCurrent = [];
@@ -337,32 +349,35 @@ var enemyPartyAttacks = function(enemiesArr) {
 	var activeEnemy;
 	for (var i = 0; i < enemiesArr.length; i++) {
 		activeEnemy = enemiesArr[i];
-		currentEnemy = activeEnemy;
-		if (!activeEnemy.engaged) {
-			activeEnemy.chargeUlt();
-			setTimeout($printMessage, 600);
-		} else if (activeEnemy.engaged) {
-			currentTarget = activeEnemy.engagedTo;
-			var enemyAttack = activeEnemy.attack(currentTarget);
-			if (typeof enemyAttack === 'number') {
-				var attackedHero;
-				for (var j = 0; j < activeEnemy.engagedTo.length; j++) {
-					attackedHero = activeEnemy.engagedTo[j];
-					dealDamage(attackedHero, enemyAttack);
-					currentCombatMessage = activeEnemy.name + ' dealt ' + enemyAttack
-						 + ' damage to ' + attackedHero.name + '.';
-					attackedHero.getStatus();
-					setTimeout($printMessage, 800);
+		if (!activeEnemy.turnTaken) {
+			currentEnemy = activeEnemy;
+			if (!activeEnemy.engaged) {
+				activeEnemy.chargeUlt();
+				setTimeout($printMessage, 600);
+			} else if (activeEnemy.engaged) {
+				currentTarget = activeEnemy.engagedTo;
+				var enemyAttack = activeEnemy.attack(currentTarget);
+				if (typeof enemyAttack === 'number') {
+					var attackedHero;
+					for (var j = 0; j < activeEnemy.engagedTo.length; j++) {
+						attackedHero = activeEnemy.engagedTo[j];
+						dealDamage(attackedHero, enemyAttack);
+						currentCombatMessage = activeEnemy.name + ' dealt ' + enemyAttack
+							 + ' damage to ' + attackedHero.name + '.';
+						attackedHero.getStatus();
+						setTimeout($printMessage, 800);
+					}
+				} else {
+					setTimeout($printMessage, 550);
 				}
-			} else {
-				setTimeout($printMessage, 550);
 			}
+			activeEnemy.turnTaken = true;
+			$updateTooltip('enemy', 'stam');
+			$updateTooltipHeroDice(currentHero);
+			$updateMenuHeroStats();
 		}
-		activeEnemy.turnTaken = true;
-		$updateTooltip('enemy', 'stam');
-		$updateTooltipHeroDice(currentHero);
-		$updateMenuHeroStats();
 	};
+	$('#turnMarquee').text('PLAYER TURN');
 	refreshDice(theParty);
 };
 
@@ -458,6 +473,8 @@ var $clickSubmitBreak = function() {
 
 //need to implement!
 
+var promptForCP
+
 
 //combat feed print
 
@@ -524,9 +541,25 @@ var emptyDice= function() {
 
 var triggerEndOfTurn = function() {
 	if (theParty.every(function(unit) {return unit.turnTaken;})) {
+		theEnemyParty.forEach(function(enemy) {
+			if (enemy.stam > 0) {
+				enemy.turnTaken = false;
+				enemy.broken = false;
+			}
+		});
+		$('div#turnMarquee').delay(700).text('ENEMY TURN');
 		setTimeout(function() {
 			$printMessage('The heroes\' turn is over...');
-			enemyPartyAttacks(theEnemyParty);
-		}, 600);
+			setTimeout(function() {
+				enemyPartyAttacks(theEnemyParty);
+			}, 800);
+		}, 750);
 	}
 };
+
+var passTurnManual = function() {
+	currentHero.turnTaken = true;
+	$updateMenuHeroStats();
+	$updateTooltipHeroDice(currentHero);
+	triggerEndOfTurn();
+}

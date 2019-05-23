@@ -61,6 +61,7 @@ var Hero = function(name, stam, trait) {
 	this.statusEffect = false;
 	this.statuses = [];
 	this.engaged = false;
+	this.engagedThisTurn = false;
 	this.rollBonus = 0;
 	this.dice = [];
 	this.diceStrength = [startDice, startDice];
@@ -101,15 +102,21 @@ Hero.prototype.getStatus = function() {
 }
 
 Hero.prototype.$engageEnemy = function(enemy) {
-	establishEngagement(this, enemy);
-	currentCombatMessage = this.name + ' engaged ' + enemy.name + ' in melee combat!';
-	$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
+	if (establishEngagement(this, enemy)) {
+		currentCombatMessage = this.name + ' engaged ' + enemy.name + ' in melee combat!';
+		$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
+		return true;
+	}
+	return false;
 };
 
 Hero.prototype.$disengageEnemy = function(enemy) {
-	establishEngagement(this, enemy, true);
-	currentCombatMessage = this.name + ' disengaged from their battle with ' + enemy.name + '.';
-	$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
+	if (establishEngagement(this, enemy, true)) {
+		currentCombatMessage = this.name + ' disengaged from their battle with ' + enemy.name + '.';
+		$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
+		return true;
+	}
+	return false;
 };
 
 
@@ -358,6 +365,7 @@ enemyMurkman.moveset = {
 };
 
 var enemySlipAllEngagement = function(unit) {
+	unit.engagedThisTurn = false;
 	unit.$disengageEnemy(theEnemyParty[0]);
 	$disengageHeroCard(unit);
 };

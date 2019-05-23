@@ -10,8 +10,7 @@
   <body>
     <script>
     	$(document).ready(function() {
-    		$turnMarquee = $('#turnMarquee');
-    		$turnMarquee.text('PLAYER TURN');
+    		$('#turnMarquee').text('PLAYER TURN');
 
 //battlefield tooltips
 
@@ -55,6 +54,7 @@
     		$('#heroOptionsWindow1 div:eq(0)').first().text('Attack').addClass('attack');
     		$('#heroOptionsWindow1 div:eq(1)').first().text('Break').addClass('break');
     		$('#heroOptionsWindow1 div:eq(2)').first().text('Inventory').addClass('inv');
+    		$heroMenu1.append('<div class="option pass">Pass Turn</div>');
     		$heroMenu1.prepend('<div class="option engage">' + genEngageOption(hero1) + 
     			'</div>');
 
@@ -74,10 +74,15 @@
     			} else if ($(this).hasClass('inv')) {
     				$heroMenu2.html('');
     				$genMenu($heroMenu2, mapNameProp(currentHero.inventory), 'inv');
+    			} else if ($(this).hasClass('pass')) {
+    				$heroMenu2.html('');
+    				$genMenu($heroMenu2, ['Yep, pass', 'Nevermind'], 'pass');
     			}
     		});
 
 //hero menu functionality
+
+			if (!currentHero.turnTaken) {
     		
     		var $clickMove = $(document).on('click', 'div.move>p', function() {
     			currentMove = 'move'
@@ -91,6 +96,9 @@
 				$chooseDice();
 			});
 
+			var $clickDiceSubmit = $(document).on('click', '#diceChosenSubmit', function() {
+				setCurrentDice();
+			});
 
 			var $clickEngage = $(document).on('click', 'div.engage>p', function() {
 				$('div#heroOptionsWindow3').remove();
@@ -100,13 +108,13 @@
 					}
 				};
 				if ($('#heroOptionsWindow1>div.engage').text() === 'Engage!') {
-					currentHero.$engageEnemy(currentTarget);
-					$engageHeroCard(currentHero);
-
+					if (currentHero.$engageEnemy(currentTarget)) {
+						$engageHeroCard(currentHero);
+					}
 				} else if ($('#heroOptionsWindow1>div.engage').text() === 'Disengage!') {
-					currentHero.$disengageEnemy(currentTarget);
-					$disengageHeroCard(currentHero);
-
+					if (currentHero.$disengageEnemy(currentTarget)) {
+						$disengageHeroCard(currentHero);
+					}
 				}
 				$printMessage();
 				$updateMenuHeroStats();
@@ -124,9 +132,14 @@
 				})		
 			});
 
-			var $clickDiceSubmit = $(document).on('click', '#diceChosenSubmit', function() {
-				setCurrentDice();
+			var $clickPass = $(document).on('click', 'div.pass>p', function() {
+				$('div#heroOptionsWindow3').remove();	
+				if ($(this).text() === 'Yep, pass') {
+					passTurnManual();
+				}
+				$heroMenu2.html('');
 			});
+		}
 
 
     	})
