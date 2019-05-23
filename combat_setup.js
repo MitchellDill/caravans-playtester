@@ -67,12 +67,17 @@ var refreshDice = function(heroOrParty) {
 	} else {
 		pushYourDice(heroOrParty);
 	}
+	$updateMenuHeroStats();
 }
 
 var pushYourDice = function(hero) {
-	hero.diceStrength.forEach(function(die) {
-		hero.dice.push(die);
-	});
+	if (hero.stam > 0) {
+		hero.turnTaken = false;
+		hero.diceStrength.forEach(function(die) {
+			hero.dice.push(die);
+		});
+		$updateTooltipHeroDice(hero);
+	}
 };	
 
 
@@ -86,15 +91,30 @@ var establishEngagement = function(hero, enemy, disengage) {
 	if (disengage) {
 		hero.engaged = false;
 		enemy.engagedTo = enemy.engagedTo.filter(function(element, index) {
-			return (!hero);
+			return element != hero;
 		});
-		//trigger attack of opportunity
+		if (enemy.moveset.hasOppo) {
+			$printMessage(enemy.moveset.oppoText);
+			currentTargetDamage = enemy.moveset.oppo.call(enemy);
+			if (typeof currentTargetDamage === 'number') {
+				dealDamage(hero, currentTargetDamage);
+			}
+		}
+		if (enemy.engagedTo.length === 0) {
+			enemy.engaged = false;
+		}
 	} else {
 		hero.engaged = true;
 		enemy.engaged = true;
 		enemy.engagedTo.push(hero);
 	}
 };
+
+var $engageHeroCard = function(hero) {
+	if($('div#unengagedHeroes>div.hero>p').text() === hero.name) {
+		$('div#unengagedHeroes>div.hero').addClass('engagedHero');
+	}
+}
 
 
 
@@ -156,6 +176,7 @@ var chooseMove = function(move, hero) {
 				if (currentTarget === null) {
 					currentCombatMessage = 'You must first engage in melee combat to use ' + 
 					move.name + '.';
+					refundDice(currentHero);
 					return false;
 				}
 		} else if (move.ranged) {
@@ -182,11 +203,14 @@ var chooseMove = function(move, hero) {
 			$updateTooltip('enemy', 'stam');
 
 		} else {
-			currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
-			currentDiceResult.reduce(arrayAsSingleValue, 0) + '!';
+			if (currentDice.length > 0) {
+				currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
+				currentDiceResult.reduce(arrayAsSingleValue, 0) + '!';
+			} else {
+				currentCombatMessage = 'Looks like ' + hero.name + ' is out of dice.';
+			}
 			return false;
 		}
-
 
 	}
 
@@ -236,22 +260,19 @@ var chooseBreak = function(hero) {
 	currentTarget = returnEngagedEnemy(hero);
 	if (currentTarget === null) {
 		currentCombatMessage = 'You must first engage in melee combat to use break.';
+		refundDice(currentHero);
 		return false;
-				}
+	}
 	if (currentTarget.broken) {
 		currentCombatMessage = currentTarget.name + ' is already broken.'; 
-	} else {
-		//currentDice = hero.dice;
+	} else if (currentDice.length > 0) {
 		currentDiceResult = rollDiceIntoArray(currentDice);
 		currentCombatMessage = hero.name + ' rolled ' + currentDiceResult + ' as break dice onto ' + currentTarget.name + '.';
-		$printMessage(currentCombatMessage);
-		
+		$printMessage();
 		addBreak(hero, currentTarget, currentDiceResult);
-
-		//currentDice, hero.dice = [];
 		messageDelay = 420;
-		
 	}
+
 	$updateTooltipHeroDice(hero);
 	$updateTooltip('enemy', 'stam');
 	$('#heroOptionsWindow2').html('');
@@ -293,6 +314,69 @@ var InitiateBreak = function(brokenEnemy) {
 };
 
 
+//enemy attacking
+
+//when it's the enemy turn--
+//go in enemyPartyOrder (represented left to right in the browser and 0-N in the array) 
+//is the enemy engaged?
+	//if not, then chargeUlt()
+	//combat message because not engaged
+	//CU checks to fireUlt()
+	//print
+	//combat message if ult fires
+//if SO, enemy uses attack method on .engagedTo
+	//combat message because engaged, print
+	//combat message rollResult, print
+	//deal damage using return value, if a number is returned
+	//combat message damage dealt
+	//update tooltips and menu
+//print message
+
+var enemyPartyAttacks = function(enemiesArr) {
+	messageDelay = 0;
+	var activeEnemy;
+	for (var i = 0; i < enemiesArr.length; i++) {
+		activeEnemy = enemiesArr[i];
+		currentEnemy = activeEnemy;
+		if (!activeEnemy.engaged) {
+			activeEnemy.chargeUlt();
+			setTimeout($printMessage, 600);
+		} else if (activeEnemy.engaged) {
+			currentTarget = activeEnemy.engagedTo;
+			var enemyAttack = activeEnemy.attack(currentTarget);
+			if (typeof enemyAttack === 'number') {
+				var attackedHero;
+				for (var j = 0; j < activeEnemy.engagedTo.length; j++) {
+					attackedHero = activeEnemy.engagedTo[j];
+					dealDamage(attackedHero, enemyAttack);
+					currentCombatMessage = activeEnemy.name + ' dealt ' + enemyAttack
+						 + ' damage to ' + attackedHero.name + '.';
+					attackedHero.getStatus();
+					setTimeout($printMessage, 800);
+				}
+			} else {
+				setTimeout($printMessage, 550);
+			}
+		}
+		activeEnemy.turnTaken = true;
+		$updateTooltip('enemy', 'stam');
+		$updateTooltipHeroDice(currentHero);
+		$updateMenuHeroStats();
+	};
+	refreshDice(theParty);
+};
+
+var fireUlt = function(enemy) {
+	currentCombatMessage = 'Ultimate attack!'
+	$printMessage();
+	enemy.moveset.ultimate();
+	enemy.ultCharge = 0;
+	
+	currentCombatMessage = enemy.name + '\'s ult charge resets to 0.';
+};
+
+
+
 //dice choice and submission
 
 var $chooseDice = function() {
@@ -332,11 +416,17 @@ var setCurrentDice = function() {
 	currentHero.dice = currentHero.dice.filter(function(element, index) {
 		return (diceCheckArr[index]) ? false : true;
 	});
-		if (currentMove === 'move') {
-			$clickSubmitMove();
-		} else if (currentMove === 'break') {
-			$clickSubmitBreak();
-		}
+	if (currentMove === 'move') {
+		$clickSubmitMove();
+	} else if (currentMove === 'break') {
+		$clickSubmitBreak();
+	}
+};
+
+var refundDice = function(hero) {
+	currentDice.forEach(function(die) {
+		hero.dice.push(die);
+	});
 };
 
 var returnCheckBox = function(checkbox) {
@@ -364,12 +454,19 @@ var $clickSubmitBreak = function() {
 	emptyDice();
 };
 
+//CP handling
+
+//need to implement!
+
 
 //combat feed print
 
 var $printMessage = function(message) {
-	$('div#feed').prepend('<p class="message">' + currentCombatMessage + '</p>');
-	if (currentCombatMessage.includes('damage') && currentTargetDamage > 0) {
+	if (!message) {
+		message = currentCombatMessage;
+	}
+	$('div#feed').prepend('<p class="message">' + message + '</p>');
+	if (message.includes('damage')) {
 		$('div#feed>p.message:first').addClass('damage');
 	}
 };
@@ -380,6 +477,7 @@ var $printMessage = function(message) {
 
 
 var $updateTooltipHeroDice = function(hero) {
+	$('div#menuStam').text('Stamina: ' + hero.stam + '/' + hero.maxStam);
 	$('div#menuDiceHeld').text('Dice Held: ' + hero.dice.length);
 }
 
@@ -389,6 +487,7 @@ var $updateTooltip = function(unitType, stat) {
 	if (statName === 'Stam') {
 		statName += 'ina';
 	}
+	$('div.ult').text('Ult in: ' + (theEnemyParty[0].moveset.ultFiresOn - theEnemyParty[0].ultCharge));
 	$('div.' + className).text(statName + ': ' + theEnemyParty[0][stat] + '/' + theEnemyParty[0].maxStam);
 	$('div.enemyBreak:first').text('Break Dice: ' + theEnemyParty[0].breakDiceCurrent); 
 };
@@ -404,6 +503,30 @@ var $updateMenuHeroStats = function() {
 	$('#heroDice>p').text(currentHero.dice.length + ' dice available');
 };
 
+
+var $disengageHeroCard = function(hero) {
+	if($('div#unengagedHeroes>div.hero>p').text() === hero.name) {
+		$('div#unengagedHeroes>div.hero').removeClass('engagedHero');
+	}
+}
+
 var emptyDice= function() {
 	currentDice = [];
+	if (currentHero.dice.length <= 0) {
+		currentHero.turnTaken = true;
+		triggerEndOfTurn();
+	}
+};
+
+
+//keeping track of TURNS
+
+
+var triggerEndOfTurn = function() {
+	if (theParty.every(function(unit) {return unit.turnTaken;})) {
+		setTimeout(function() {
+			$printMessage('The heroes\' turn is over...');
+			enemyPartyAttacks(theEnemyParty);
+		}, 600);
+	}
 };

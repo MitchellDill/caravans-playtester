@@ -21,7 +21,7 @@
     		$('.enemy').append('<div class="statWindow">' + 
     			'<div class="enemyStam">Stamina: ' + theEnemyParty[0].stam + '/' + 
     			  theEnemyParty[0].maxStam + '</div>' +
-    			'<div>Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>' + 
+    			'<div class="ult">Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>' + 
     			'<div class="enemyBreak">Break Dice: ' + enemy1.breakDiceCurrent + '</div>' + 
     			'<div class="enemyBreak">Break Threshold: ' + enemy1.breakThresh + '</div>');
 
@@ -33,7 +33,7 @@
 
     		$('div#unengagedHeroes').append('<div class=hero><p>' + hero1.name + '</p></div');
     		$('.hero').append('<div class="statWindow">' + 
-    			'<div>Stamina: ' + hero1.stam + '/' + hero1.maxStam + '</div>' +
+    			'<div id="menuStam">Stamina: ' + hero1.stam + '/' + hero1.maxStam + '</div>' +
     			'<div id="menuDiceHeld">Dice Held: ' + hero1.dice.length + '</div>' + 
     			'<div>Wielding: ' + hero1.inventory.equipped[0].name + '</div>');
 
@@ -101,15 +101,11 @@
 				};
 				if ($('#heroOptionsWindow1>div.engage').text() === 'Engage!') {
 					currentHero.$engageEnemy(currentTarget);
-					if($('div#unengagedHeroes>div.hero>p').text() === currentHero.name) {
-						$('div#unengagedHeroes>div.hero').addClass('engagedHero');
-					}
+					$engageHeroCard(currentHero);
 
 				} else if ($('#heroOptionsWindow1>div.engage').text() === 'Disengage!') {
 					currentHero.$disengageEnemy(currentTarget);
-					if($('div#unengagedHeroes>div.hero>p').text() === currentHero.name) {
-						$('div#unengagedHeroes>div.hero').removeClass('engagedHero');
-					}
+					$disengageHeroCard(currentHero);
 
 				}
 				$printMessage();

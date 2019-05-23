@@ -94,11 +94,11 @@ Hero.prototype.getStatus = function() {
 	} else if (!this.statusEffect) {
 		return 'Healthy';
 	} else  {
-		return 'Has ' + this.statuses.reduce(function(accum, current) {
-			accum + ', and ' + current;
-		}, '');
+		return 'Has ' + this.statuses.map(function(element) {
+			return element.name;
+	}).join(', ');
 	}
-};
+}
 
 Hero.prototype.$engageEnemy = function(enemy) {
 	establishEngagement(this, enemy);
@@ -176,9 +176,12 @@ Move.prototype.attack = function(target, weapon, hero) {
 var swordMoveHack = new Move('hack', 1, 'sword', function(target){
 	return (target.howManyBreak());
 });
+swordMoveHack.text = 'Deal damage equal to the number of break dice on an enemy.'
+
 var swordMoveSlash = new Move('slash', 3, 'sword', function(target, weapon) {
 	return (weapon.damage * 2);
 });
+swordMoveSlash.text = 'Deal twice this weapon\'s damage to an enemy.';
 
 
 
@@ -286,28 +289,48 @@ Enemy.prototype.breakDiceTotal = function() {
 
 Enemy.prototype.attack = function(target) {
 	var attackSelected = enemyDice.roll();
-	return this.moveset[attackSelected](target);
+	currentCombatMessage = this.name + ' rolled their ' + attackSelected + ' attack.';
+	$printMessage();
+	return this.moveset[attackSelected].call(this,target);
 };
+
+Enemy.prototype.chargeUlt = function() {
+	currentCombatMessage = this.name + ' charges their ultimate attack.';
+	this.ultCharge += 1;
+	$printMessage();
+	if (this.moveset.ultFiresOn <= this.ultCharge) {
+		fireUlt(this);
+	} else {
+		currentCombatMessage = (this.moveset.ultFiresOn - this.ultCharge) + ' more charge to go...';
+	}
+};
+
 
 var enemyMurkman = new Enemy('Murkman', 18, 2, 'Deep Marshes', 9);
 
 enemyMurkman.moveset = {
 	basic : function() {return 2},
 	specialized : function() {
-		arguments.forEach(enemySlipAllEngagement);
+		arguments[0].forEach(enemySlipAllEngagement);
 		this.engaged = false;
+		this.engagedTo = [];
+		currentCombatMessage = this.moveset.specializedText;
 	},
 	advanced : function() {
-		this.stam += 6;
+		if (this.stam < (this.maxStam - 6)) {
+			this.stam += 6;
+		} else {
+			this.stam = this.maxStam;
+		}		
 		return 3;
 	},
-	basicText : 'deals 2 damage to ',
-	specializedText : 'slips out of engagement!',
-	advancedText : 'regenerates back to ' + this.stam + 'stamina, then deals 3 damage to ',
+	basicText : 'Deals 2 damage to engaged heroes.',
+	specializedText : 'Murkman slips out of engagement!',
+	advancedText : 'Murkman regenerates 6 stamina, then deals 3 damage to engaged heroes.',
 	ultimate : function() {
-		return party.map(function(hero) {
+		return theParty.forEach(function(hero) {
 			var message = '';
-			var heroRoll = sixDice();
+			var heroRoll = sixDice.roll();
 			var rollPass;
 			var rollMessage = 'avoided the ultimate!';
 			heroRoll >= 4 ? rollPass = true : rollPass = false;
@@ -316,19 +339,27 @@ enemyMurkman.moveset = {
 				hero.statusEffect = true;
 				hero.statuses.push(allStatuses.disease.bogrot);
 			}
-			return message = hero.name + ' rolled a ' + heroRoll + ' and ' + rollMessage;
+			message = hero.name + ' rolled a ' + heroRoll + ' and ' + rollMessage;
+			$printMessage(message);
 		})
 	}, 
 	ultFiresOn : 3,
 	ultimateText : 'If heroes cannot roll a 4 or higher on a six-sided die, they\'ll be afflicted by bogrot!',
 	hasOppo : true,
-	oppo : function() {return [1]},
-	oppoText : 'Disengaging from the ' + this.name + 'will cause a hero to take 1 damage--this effect then ripples through the ranks of all' + 
+	oppo : function() {
+		theParty.forEach(function(hero) {
+			if (!hero.engaged) {
+				dealDamage(hero, 1);
+			}
+		});
+	},
+	oppoText : 'Disengaging from the murkman will cause a hero to take 1 damage--this effect then ripples through the ranks of all' + 
 		' other disengaged heroes!'
 };
 
-var enemySlipAllEngagement = function(element) {
-	element.engaged = false;
+var enemySlipAllEngagement = function(unit) {
+	unit.$disengageEnemy(theEnemyParty[0]);
+	$disengageHeroCard(unit);
 };
 
 
