@@ -60,6 +60,12 @@ var $genMenu = function(div, arr, option) {
 	$('#heroOptionsWindow3').remove();
 };
 
+var $genToolTip = function(div, arr, option) {
+	arr.forEach(function(element, index) {
+		div.append('<div class = "' + option + index + '">' + element + '</div>')
+	});
+};
+
 var genStamMeter = function(hero) {
 	$('div#heroStam>meter').attr('max', hero.maxStam)
 		.attr('min', 0)
@@ -85,7 +91,7 @@ var refreshDice = function(heroOrParty) {
 		heroOrParty.forEach(pushYourDice)
 		if (theParty.filter(function(hero){return hero.stam > 0})
 			.every(function(alive){return !alive.turnTaken})) {
-			$('div#turnMarquee').delay(700).text('PLAYER TURN');
+			$('div#turnMarquee').text('PLAYER TURN');
 		}
 	} else {
 		pushYourDice(heroOrParty);
@@ -150,20 +156,22 @@ var $engageHeroCard = function(hero, enemy) {
 
 	if (!$('div#engagedEnemies').hasClass(enemy.name)) {
 		$setupEngagementDiv(hero, enemy);
+	} else {
+		$generateHeroCard(hero, 'div.' + enemy.name + '>div.engagingHeroes');
 	}
 	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
 	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
 };
 
 var $disengageHeroCard = function(hero) {
-	var enemy = returnEngagedEnemy(hero);
+	$cleanUpCards(hero, 'hero', '.enemyZone>div.engagingHeroes');
+	
 	$generateHeroCard(hero, 'div#unengagedHeroes')
+	var enemy = returnEngagedEnemy(hero);
 	hero.$disengageEnemy(enemy);
 
 	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
 	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
-
-	$cleanUpCards(hero, 'hero', '.enemyZone');
 
 	if (enemy.engagedTo.length === 0) {
 		$cleanUpCards(enemy, 'enemy', '.enemyZone');
@@ -182,22 +190,68 @@ var $childNodeCleanup = function() {
 
 var $generateEnemyCard = function(enemy, div) {
 	var enemyID = enemy.ID();
-	$(div).append('<div class="enemy" id="' + enemyID + '"><p>' + enemy.name + '</p></div>');
-    $('#' + enemyID).append('<div class="statWindow">' + 
-    	'<div class="enemyStam">Stamina: ' + enemy.stam + '/' + 
-    	 enemy.maxStam + '</div>' +
+	$(div).prepend('<div class="enemy" id="' + enemyID + '"><p>' + enemy.name + '</p></div>');
+	var $card = $('div#' + enemyID);
+	$card.append('<div class="cardStats">' +
+		'<div class="enemyStam">Stamina: ' + enemy.stam + '/' + enemy.maxStam + '</div>' +
     	'<div class="ult">Ult in: ' + (enemy.moveset.ultFiresOn - enemy.ultCharge) + '</div>' + 
-    	'<div class="enemyBreak">Break Dice: ' + enemy.breakDiceCurrent + '</div>' + 
-    	'<div class="enemyBreak">Break Threshold: ' + enemy.breakThresh + '</div>');
+    	'<div class="enemyBreak">Break now: ' + enemy.breakDiceCurrent.reduce(arrayAsSingleValue, 0) + '</div>' + 
+    	'<div class="enemyBreak">Breaks at: ' + enemy.breakThresh + '</div>' +
+		'</div>');
+
+	//enemy tooltip gen
+    $('#' + enemyID).append('<div class="statWindow menuInfoHover">' + 
+    	'<div class="enemyBreak">Break Dice: [' + enemy.breakDiceCurrent + ']</div>' + 
+    	'<div class="enemyMoveset"><p><span>Basic:</span> ' + enemy.moveset.basicText + '</p>' +
+    	'<p><span>Specialized:</span> ' + enemy.moveset.specializedText + '</p>' + 
+    	'<p><span>Advanced:</span> ' + enemy.moveset.advancedText + '</p>' +
+    	'<p><span>Ultimate:</span> ' + enemy.moveset.ultimateText + '</p></div>');
+    if (enemy.moveset.hasOppo) {
+    	$('#' + enemyID + '>div.statWindow>div.enemyMoveset')
+    	.append('<p><span>Attack of Opportunity:</span> ' + enemy.moveset.oppoText + '</p>');
+    }
 }
 
 var $generateHeroCard = function(hero, div) {
 	var heroID = hero.ID();
-	  $(div).append('<div class="hero" id="' + heroID + '"><p>' + hero.name + '</p></div');
+	$(div).append('<div class="hero" id="' + heroID + '"><p>' + hero.name + '</p></div');
+	var $card = $('div#' + heroID);
+	$card.append('<div class="cardStats">' + 
+		'<div class="menuStam">Stamina: ' + hero.stam + '/' + hero.maxStam + '</div>' +
+    	'<div class="menuDiceHeld">Dice Held: ' + hero.dice.length + '</div>' + 
+		'</div>');
+	if (hero.guard> 0) {
+		$('div #' + heroID + '>div.cardStats').append('<div class="guard">Guard: ' + hero.guard + '</div>');
+	}
+	if (hero.armor > 0) {
+		$('div #' + heroID + '>div.cardStats').append('<div class="armor">Armor: ' + hero.armor + '</div>');
+	}
+
+	  //hero tooltip gen
+	  	$card.append('<div class="statWindow"></div>')
+	  	var $selectedDiv = $('div#' + heroID + '>div.statWindow');
+	  	$genToolTip($selectedDiv, mapNameProp(hero.inventory.equipped), 'weapon');
+	  	for (var i = 0; i < hero.inventory.equipped.length; i++) {
+	  		$('div#' + heroID + '>div.statWindow>div.weapon' + i).append('<div class="statWindow2"></div>');
+	  		var $nestedToolTip = $('div#' + heroID + ' .statWindow2')
+	  		$genToolTip($nestedToolTip, mapNameProp(hero.inventory.equipped[i], 'move'), 'move');
+	  	};
+	  	for (var en in hero.breakDiceOn) {
+	  		if (hero.breakDiceOn[en].length > 0) {
+	  			$selectedDiv.append('<div class="heroBreak">Break dice #:<br>' + en + ' - ' + 
+	  				hero.breakDiceOn[en].length + '</div>');
+	  		}
+	  	};
+	  	
+	  	
+/*
+	  	hero.inventory.equipped[0].name
     	$('#' + heroID).append('<div class="statWindow">' + 
-    		'<div id="menuStam">Stamina: ' + hero.stam + '/' + hero.maxStam + '</div>' +
-    		'<div id="menuDiceHeld">Dice Held: ' + hero.dice.length + '</div>' + 
-    		'<div>Wielding: ' + hero.inventory.equipped[0].name + '</div>');
+    		'<div class="wielding">Wielding: ' + hero.inventory.equipped[0].name + '</div>')
+    		.append('<div class="statWindow">' +
+    			'<div>' +  '</div>'
+    			)
+    			*/
 }
     		
 var $setupEngagementDiv = function(hero, enemy) {
@@ -339,12 +393,20 @@ var attackSuccessfully = function(hero, move) {
 var dealDamage = function(target, damage) {
 	if (target.guard > 0) {
 		damage -= target.guard;
+		target.guard -= damage;
 	}
 	if (target.armor > 0) {
 		damage -= target.armor;
+		target.armor -= damage;
 	}
 	currentTargetDamage = damage;
 	target.stam -= damage;
+	if (target.armor < 0) {
+		target.armor = 0;
+	}
+	if (target.guard < 0) {
+		target.guard = 0;
+	}
 	return target.stam;
 };
 
@@ -584,8 +646,10 @@ var $printMessage = function(message) {
 
 
 var $updateTooltipHeroDice = function(hero) {
-	$('div#menuStam').text('Stamina: ' + hero.stam + '/' + hero.maxStam);
-	$('div#menuDiceHeld').text('Dice Held: ' + hero.dice.length);
+	var heroID = hero.ID();
+	var $heroCard = 'div#' + heroID + '>div.cardStats>';
+	$($heroCard + '.menuStam').text('Stamina: ' + hero.stam + '/' + hero.maxStam);
+	$($heroCard + '.menuDiceHeld').text('Dice Held: ' + hero.dice.length);
 }
 
 var $updateTooltip = function(unitType, stat) {
@@ -594,9 +658,10 @@ var $updateTooltip = function(unitType, stat) {
 	if (statName === 'Stam') {
 		statName += 'ina';
 	}
-	$('div.ult').text('Ult in: ' + (theEnemyParty[0].moveset.ultFiresOn - theEnemyParty[0].ultCharge));
-	$('div.' + className).text(statName + ': ' + theEnemyParty[0][stat] + '/' + theEnemyParty[0].maxStam);
-	$('div.enemyBreak:first').text('Break Dice: ' + theEnemyParty[0].breakDiceCurrent); 
+	$('.ult').text('Ult in: ' + (theEnemyParty[0].moveset.ultFiresOn - theEnemyParty[0].ultCharge));
+	$('.' + className).text(statName + ': ' + theEnemyParty[0][stat] + '/' + theEnemyParty[0].maxStam);
+	$('.enemyBreak:first').text('Break Now: ' + theEnemyParty[0].breakDiceCurrent.reduce(arrayAsSingleValue, 0));
+	$('.statWindow>div.enemyBreak').text('Break Dice: [' + theEnemyParty[0].breakDiceCurrent + ']');
 };
 
 

@@ -139,7 +139,7 @@ div#wholeBattleground {
 
 div#unengagedHeroes, div#unengagedEnemies {
 	border: 1px dashed white;
-	height: 140px;
+	height: 150px;
 	width: 100%;
 }
 
@@ -160,7 +160,7 @@ div.enemyZone {
 }
 
 div.enemyZone>div.engagingHeroes {
-	height: 138px;
+	height: 148px;
 	margin: 4px;
 	clear:both;
 	border: none;
@@ -277,7 +277,7 @@ div.option:hover {
 div.enemy, div.hero {
 	display: inline-block;
 	position: relative;
-	height: 120px;
+	height: 130px;
 	width: 100px;
 	padding: 2px;
 	margin: 6px 8px;
@@ -293,6 +293,16 @@ div.enemy {
 
 div.hero {
 	background-color: purple;
+}
+
+div.cardStats {
+	margin: 4px 2px;
+}
+
+div#wholeBattleground>section>div>div>div.cardStats>div {
+	margin: 1px 0px;
+	padding: 1px;
+	text-align: left;
 }
 
 .statWindow {
@@ -311,16 +321,76 @@ div.hero {
 	text-align: center;
 
 	padding: 4px 4px;
+	width: 150px;
+}
+
+.statWindow2 {
+	visibility: hidden;
+	position: absolute;
+	z-index: 9999;
+	left: 160px;
+	bottom: 0px;
+
+	background-color: green;
+	color: gold;
+
+	opacity: 0;
+	transition: opacity 0.3s;
+
+	text-align: center;
+
+	padding: 4px 4px;
+}
+
+.infoWindow {
+	visibility: hidden;
+	position: absolute;
+	z-index: 9999;
+	left: 55%;
+	top: -155px;
+
+	background-color: purple;
+	color: gold;
+
+	opacity: 0;
+	transition: opacity 2.0s;
+
+	text-align: center;
+
+	padding: 4px 4px;
+	width: 150px;
+}
+
+.infoWindow>p {
+	padding: 2px;
+	margin: 4px 3px;
 }
 
 .statWindow>div {
 	margin: 6px 2px;
+	padding: 3px;
 }
 
-div.enemy:hover .statWindow, div.hero:hover .statWindow{
-	visibility: visible;
-	opacity: 1;
+.statWindow2>div {
+	margin: 4px 1px;
+	border:none;
 }
+
+div.enemy:hover .statWindow, div.hero:hover .statWindow {
+	visibility: visible;
+	opacity: .9;
+}
+
+div.statWindow:hover .statWindow2 {
+	visibility: visible;
+	opacity: .9;
+}
+
+div.move:hover .infoWindow {
+	visibility: visible;
+	opacity: .8;
+}
+
 
 p.message {
 	margin-bottom: 5px;
@@ -339,5 +409,25 @@ div.pass:nth-child(1) {
 	color: red;
 }
 
+.menuInfoHover {
+	width: 300px;
+	text-align: left;
+}
 
+.menuInfoHover>div {
+	margin: 3px;
+	padding: 3px;
+}
 
+.menuInfoHover>div:nth-child(2) {
+	border:none;
+}
+
+.menuInfoHover>div>p {
+	margin: 4px 2px;
+}
+
+.menuInfoHover>div>p>span {
+	font-weight: bold;
+	color: orange;
+}

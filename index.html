@@ -73,6 +73,25 @@
     			}
     		});
 
+    		var $hoverMove = $(document).on('mouseenter', 'div.move>p', function() {
+    			for (var index = 0; index < currentHero.inventory.equipped.length; index++) {
+    				var theWeapon = currentHero.inventory.equipped[index]
+    				var moveNames = mapNameProp(theWeapon, 'move');
+				 	for (var i = 0; i < moveNames.length; i++) {
+			 			if (moveNames[i] === $(this).text()) {
+			 				$(this).parent().append('<div class="infoWindow">' + 
+			 				'<p>' + theWeapon.name + '</p>' + 
+			 				'<p>Damage:' + theWeapon.damage + '</p>' +
+			 				'<p>' + findWhichMoveWithName(moveNames[i], theWeapon).text
+			 				+ '</p></div>');
+			 			}
+			 		};
+			 	};
+			})
+    		.on('mouseleave', 'div.move>p', function() {
+    			$('.infoWindow').remove();
+    		});
+
 //hero menu functionality
 
 			if (!currentHero.turnTaken) {
