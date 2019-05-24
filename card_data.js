@@ -75,11 +75,11 @@ var Hero = function(name, stam, trait) {
 	allHeroes.push(this);
 }
 
-Hero.prototype.checkRoll = function(move, diceResults) {
+Hero.prototype.checkRoll = function(move, diceResults, checkCP) {
 	var result = diceResults.reduce(function(accum, current) {
 		return accum + current;
 	}, 0);
-	return ((result + this.rollBonus) >= move.cost) ? true : false; 
+	return checkCP ? (result + this.cp >= move.cost) : ((result + this.rollBonus) >= move.cost) ? true : false; 
 };
 
 Hero.prototype.askCP = function(attemptedMove) {
@@ -308,7 +308,7 @@ Enemy.prototype.chargeUlt = function() {
 	if (this.moveset.ultFiresOn <= this.ultCharge) {
 		fireUlt(this);
 	} else {
-		currentCombatMessage = (this.moveset.ultFiresOn - this.ultCharge) + ' more charge to go...';
+		currentCombatMessage = (this.moveset.ultFiresOn - this.ultCharge) + ' more charges to go...';
 	}
 };
 
@@ -366,7 +366,6 @@ enemyMurkman.moveset = {
 
 var enemySlipAllEngagement = function(unit) {
 	unit.engagedThisTurn = false;
-	unit.$disengageEnemy(theEnemyParty[0]);
 	$disengageHeroCard(unit);
 };
 

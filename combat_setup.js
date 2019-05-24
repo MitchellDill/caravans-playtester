@@ -1,3 +1,19 @@
+var currentMove;
+var currentHero;
+var currentEnemy;
+var currentTarget;
+var currentWeapon;
+var currentTargetDamage;
+var currentDice = [];
+var currentDiceResult;
+var currentCombatMessage;
+var currentMoveText;
+
+var messageDelay;
+
+var theParty = [];
+var theEnemyParty = [];
+
 //character menu generation functions
 
 var genEngageOption = function(hero) {
@@ -27,6 +43,7 @@ var mapNameProp = function(arrOrObj, keyword) {
 };
 
 var runOnArray = function(arr, callback, parameter) {
+	//returns an array
 	var returnArr = [];
 	for (var i = 0; i < arr.length; i++) {
 		returnArr = returnArr.concat(callback(arr[i], parameter));
@@ -64,6 +81,10 @@ var populateBreakObjectWithEnemies = function() {
 var refreshDice = function(heroOrParty) {
 	if (Array.isArray(heroOrParty)) {
 		heroOrParty.forEach(pushYourDice)
+		if (theParty.filter(function(hero){return hero.stam > 0})
+			.every(function(alive){return !alive.turnTaken})) {
+			$('div#turnMarquee').delay(700).text('PLAYER TURN');
+		}
 	} else {
 		pushYourDice(heroOrParty);
 	}
@@ -74,6 +95,9 @@ var pushYourDice = function(hero) {
 	if (hero.stam > 0) {
 		hero.turnTaken = false;
 		hero.engagedThisTurn = false;
+		if (theEnemyParty.every(function(enemy) {return !enemy.broken;})) {
+			hero.gainedCP = false;
+		}
 		hero.diceStrength.forEach(function(die) {
 			if (hero.dice.length != hero.diceStrength.length) {
 				hero.dice.push(die);
@@ -87,8 +111,7 @@ var pushYourDice = function(hero) {
 //the engagement model and options
 //enemies will now keep track of the heroes they engage with in an array
 
-var theParty = [];
-var theEnemyParty = [];
+
 
 var establishEngagement = function(hero, enemy, disengage) {
 	if (!hero.engagedThisTurn) {
@@ -99,7 +122,7 @@ var establishEngagement = function(hero, enemy, disengage) {
 				return element != hero;
 			});
 			if (enemy.moveset.hasOppo) {
-				currentCombatMessage = enemy.moveset.oppoText;
+				$printMessage(enemy.moveset.oppoText);
 				currentTargetDamage = enemy.moveset.oppo.call(enemy);
 				if (typeof currentTargetDamage === 'number') {
 					dealDamage(hero, currentTargetDamage);
@@ -121,30 +144,77 @@ var establishEngagement = function(hero, enemy, disengage) {
 	}
 };
 
-var $engageHeroCard = function(hero) {
-	if($('div#unengagedHeroes>div.hero>p').text() === hero.name) {
-		$('div#unengagedHeroes>div.hero').addClass('engagedHero');
+var $engageHeroCard = function(hero, enemy) {
+	if (!$('div#engagedEnemies').hasClass(enemy.name)) {
+		$setupEngagementDiv(hero, enemy);
 	}
+	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
+	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
+
+	var oldCard = $('div#unengagedHeroes>div.hero>p').text();
+	if (oldCard === hero.name) {
+		$('div#unengagedHeroes>div.hero').remove();
+	}
+	oldCard = $('div#unengagedEnemies>div.enemy>p').text();
+	if (oldCard === enemy.name) {
+		$('div#unengagedEnemies>div.enemy').remove();
+	}
+};
+
+var $disengageHeroCard = function(hero) {
+	var enemy = returnEngagedEnemy(hero);
+	$generateHeroCard(hero, 'div#unengagedHeroes')
+
+	hero.$disengageEnemy(enemy);
+
+	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
+	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
+
+	var oldCard = $('div.engagingHeroes>div.hero>p').text();
+	if (oldCard === hero.name) {
+		$('div.engagingHeroes>div.hero').remove();
+	}
+
+	
+
+	if (enemy.engagedTo.length === 0) {
+		$generateEnemyCard(enemy, 'div#unengagedEnemies')
+		oldCard = $('div.enemyZone>div.enemy>p').text();
+		if (oldCard === enemy.name) {
+			$('div.enemyZone>div.enemy').remove();
+		}
+		$('div.enemyZone.' + enemy.name).remove();
+	}
+};
+
+//enemy engagement zone setup
+
+var $generateEnemyCard = function(enemy, div) {
+	$(div).prepend('<div class="enemy"><p>' + enemy.name + '</p></div>');
+    $('.enemy').append('<div class="statWindow">' + 
+    	'<div class="enemyStam">Stamina: ' + enemy.stam + '/' + 
+    	 enemy.maxStam + '</div>' +
+    	'<div class="ult">Ult in: ' + (enemy.moveset.ultFiresOn - enemy.ultCharge) + '</div>' + 
+    	'<div class="enemyBreak">Break Dice: ' + enemy.breakDiceCurrent + '</div>' + 
+    	'<div class="enemyBreak">Break Threshold: ' + enemy.breakThresh + '</div>');
 }
 
-
-
+var $generateHeroCard = function(hero, div) {
+	  $(div).append('<div class=hero><p>' + hero.name + '</p></div');
+    	$('.hero').append('<div class="statWindow">' + 
+    		'<div id="menuStam">Stamina: ' + hero.stam + '/' + hero.maxStam + '</div>' +
+    		'<div id="menuDiceHeld">Dice Held: ' + hero.dice.length + '</div>' + 
+    		'<div>Wielding: ' + hero.inventory.equipped[0].name + '</div>');
+}
+    		
+var $setupEngagementDiv = function(hero, enemy) {
+		$('div#engagedEnemies').append('<div class="enemyZone ' + enemy.name + '"><div class="engagingHeroes"></div></div>');
+		$generateEnemyCard(enemy, 'div.' + enemy.name);
+		$generateHeroCard(hero, 'div.engagingHeroes');
+};
 //attack flow functions
 
 //choose move
-
-var currentMove;
-var currentHero;
-var currentTarget;
-var currentWeapon;
-var currentTargetDamage;
-var currentDice = [];
-var currentDiceResult;
-var currentCombatMessage;
-var currentMoveText;
-
-var messageDelay;
-
 
 var findEquippedWeaponWithMove = function(moveName, currentHero) {
 	var currentEquip = currentHero.inventory.equipped;
@@ -201,18 +271,36 @@ var chooseMove = function(move, hero) {
 		$updateTooltipHeroDice(hero);
 		
 		if (hero.checkRoll(move, currentDiceResult)) {
-			currentCombatMessage = 'Success! ' + hero.name + ' rolled a ' + 
-			currentDiceResult.reduce(arrayAsSingleValue, 0) + '.';
-			$printMessage(currentCombatMessage);
-
-			currentTargetDamage = move.attack(currentTarget, currentWeapon, currentHero);
-			dealDamage(currentTarget, currentTargetDamage);
-
-			currentCombatMessage = currentTarget.name + ' was dealt ' + currentTargetDamage + ' damage!';
-			messageDelay = 420;
-
-			$updateTooltip('enemy', 'stam');
-
+			attackSuccessfully(hero, move);
+			
+		} else if (hero.cp > 0) {
+			if (hero.checkRoll(move, currentDiceResult, true)) {
+				var cpSpent = promptForCP(currentDiceResult, move);
+				if (cpSpent > hero.cp) {
+					cpSpent = hero.cp;
+				}
+				if (cpSpent > 0) {
+					hero.cp -= cpSpent;
+					hero.rollBonus = cpSpent;
+					if (hero.checkRoll(move, currentDiceResult)) {
+						currentDiceResult.push(cpSpent);
+						hero.gainedCP = true;
+						attackSuccessfully(hero, move);
+						hero.gainedCP = false;
+					} else {
+						$printMessage('Wasn\'t enough CP to do the trick, friend.');
+						hero.cp +- cpSpent;
+						return false
+					}
+				} else {
+					currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
+					currentDiceResult.reduce(arrayAsSingleValue, 0) + '!';
+					return false;
+				}
+			} else {
+				currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
+				currentDiceResult.reduce(arrayAsSingleValue, 0) + '!';	
+			}
 		} else {
 			if (currentDice.length > 0) {
 				currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
@@ -233,6 +321,19 @@ var chooseMove = function(move, hero) {
 
 //	}
 	return true;
+};
+
+var attackSuccessfully = function(hero, move) {
+	currentCombatMessage = 'Success! ' + hero.name + ' rolled a ' + currentDiceResult.reduce(arrayAsSingleValue, 0) + '.';
+	$printMessage(currentCombatMessage);
+
+	currentTargetDamage = move.attack(currentTarget, currentWeapon, currentHero);
+	dealDamage(currentTarget, currentTargetDamage);
+
+	currentCombatMessage = currentTarget.name + ' was dealt ' + currentTargetDamage + ' damage!';
+	messageDelay = 420;
+
+	$updateTooltip('enemy', 'stam');
 };
 
 
@@ -328,22 +429,6 @@ var InitiateBreak = function(brokenEnemy) {
 
 //enemy attacking
 
-//when it's the enemy turn--
-//go in enemyPartyOrder (represented left to right in the browser and 0-N in the array) 
-//is the enemy engaged?
-	//if not, then chargeUlt()
-	//combat message because not engaged
-	//CU checks to fireUlt()
-	//print
-	//combat message if ult fires
-//if SO, enemy uses attack method on .engagedTo
-	//combat message because engaged, print
-	//combat message rollResult, print
-	//deal damage using return value, if a number is returned
-	//combat message damage dealt
-	//update tooltips and menu
-//print message
-
 var enemyPartyAttacks = function(enemiesArr) {
 	messageDelay = 0;
 	var activeEnemy;
@@ -377,13 +462,11 @@ var enemyPartyAttacks = function(enemiesArr) {
 			$updateMenuHeroStats();
 		}
 	};
-	$('#turnMarquee').text('PLAYER TURN');
 	refreshDice(theParty);
 };
 
 var fireUlt = function(enemy) {
-	currentCombatMessage = 'Ultimate attack!'
-	$printMessage();
+	$printMessage('Ultimate attack!');
 	enemy.moveset.ultimate();
 	enemy.ultCharge = 0;
 	
@@ -473,7 +556,15 @@ var $clickSubmitBreak = function() {
 
 //need to implement!
 
-var promptForCP
+var promptForCP = function(rollResult, move) {
+	return Number(prompt('You rolled [' + rollResult + '] and you need ' + move.cost + ' total... Would you like to spend CP?', '0'));
+};
+
+//if roll is false, hero has CP, and CP amount could lead to a pass
+//show roll result
+//allow player to input number of CP to spend which would make it a pass
+//add CP to roll bonus
+
 
 
 //combat feed print
@@ -521,12 +612,6 @@ var $updateMenuHeroStats = function() {
 };
 
 
-var $disengageHeroCard = function(hero) {
-	if($('div#unengagedHeroes>div.hero>p').text() === hero.name) {
-		$('div#unengagedHeroes>div.hero').removeClass('engagedHero');
-	}
-}
-
 var emptyDice= function() {
 	currentDice = [];
 	if (currentHero.dice.length <= 0) {
@@ -542,9 +627,9 @@ var emptyDice= function() {
 var triggerEndOfTurn = function() {
 	if (theParty.every(function(unit) {return unit.turnTaken;})) {
 		theEnemyParty.forEach(function(enemy) {
+			enemy.broken = false;
 			if (enemy.stam > 0) {
 				enemy.turnTaken = false;
-				enemy.broken = false;
 			}
 		});
 		$('div#turnMarquee').delay(700).text('ENEMY TURN');
@@ -562,4 +647,4 @@ var passTurnManual = function() {
 	$updateMenuHeroStats();
 	$updateTooltipHeroDice(currentHero);
 	triggerEndOfTurn();
-}
+};

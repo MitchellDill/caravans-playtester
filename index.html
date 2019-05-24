@@ -12,17 +12,18 @@
     	$(document).ready(function() {
     		$('#turnMarquee').text('PLAYER TURN');
 
+
+//battlefield generation
+		
+
+
+
 //battlefield tooltips
 
     		var enemy1 = enemyMurkman;
     		theEnemyParty.push(enemy1);
-    		$('div#unengagedEnemies').append('<div class=enemy><p>' + enemy1.name + '</p></div');
-    		$('.enemy').append('<div class="statWindow">' + 
-    			'<div class="enemyStam">Stamina: ' + theEnemyParty[0].stam + '/' + 
-    			  theEnemyParty[0].maxStam + '</div>' +
-    			'<div class="ult">Ult in: ' + (enemy1.moveset.ultFiresOn - enemy1.ultCharge) + '</div>' + 
-    			'<div class="enemyBreak">Break Dice: ' + enemy1.breakDiceCurrent + '</div>' + 
-    			'<div class="enemyBreak">Break Threshold: ' + enemy1.breakThresh + '</div>');
+
+    		$generateEnemyCard(enemy1, 'div#unengagedEnemies');
 
     		var hero1 = heroMulholland;
     		currentHero = hero1;
@@ -30,11 +31,8 @@
     		theParty.push(currentHero);
     		refreshDice(theParty);
 
-    		$('div#unengagedHeroes').append('<div class=hero><p>' + hero1.name + '</p></div');
-    		$('.hero').append('<div class="statWindow">' + 
-    			'<div id="menuStam">Stamina: ' + hero1.stam + '/' + hero1.maxStam + '</div>' +
-    			'<div id="menuDiceHeld">Dice Held: ' + hero1.dice.length + '</div>' + 
-    			'<div>Wielding: ' + hero1.inventory.equipped[0].name + '</div>');
+    		$generateHeroCard(hero1, 'div#unengagedHeroes');
+
 
     		populateBreakObjectWithEnemies();
 
@@ -109,12 +107,11 @@
 				};
 				if ($('#heroOptionsWindow1>div.engage').text() === 'Engage!') {
 					if (currentHero.$engageEnemy(currentTarget)) {
-						$engageHeroCard(currentHero);
+						$engageHeroCard(currentHero, currentTarget);
 					}
 				} else if ($('#heroOptionsWindow1>div.engage').text() === 'Disengage!') {
-					if (currentHero.$disengageEnemy(currentTarget)) {
-						$disengageHeroCard(currentHero);
-					}
+					$disengageHeroCard(currentHero);
+									
 				}
 				$printMessage();
 				$updateMenuHeroStats();
@@ -160,15 +157,10 @@
     		</div>
 
     		<div id="engagedEnemies">
-    			<p>ENGAGED ENEMIES</p>
     		</div>
     	</section>
 
    		<section id ="partyBattleground" class="hero">
-   			<div id="engagedHeroes">
-   				<p>ENGAGED HEROES</p>
-    		</div>
-
     		<div id="unengagedHeroes">
     		</div>
      	</section>
