@@ -284,6 +284,7 @@ div.enemy, div.hero {
 	text-align: center;
 	border: 2px solid white;
 	float: left;
+	font-size: 14px;
 }
 
 div.enemy {

@@ -51,6 +51,8 @@ var allHeroes = [];
 
 var Hero = function(name, stam, trait) {
 	this.name = name;
+	this.shortName = name.slice(0, 9).toLowerCase().split(' ').join('');
+	this.ID = function() {return this.shortName + theParty.indexOf(this)};
 	this.trait = allTraits[trait];
 	this.maxStam = stam;
 	this.stam = stam;
@@ -265,6 +267,7 @@ var allEnemies = {
 
 var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.name = name;
+	this.ID = function() {return this.name + theEnemyParty.filter(function(en){return en.name === this.name}).length};
 	this.stam = stam;
 	this.maxStam = stam;
 	this.tier = tier;
@@ -280,6 +283,7 @@ var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.ultCharge = 0;
 	this.reward = [];
 	this.turnTaken = false;
+	
 
 	allEnemies[region][tier].push(this);
 };

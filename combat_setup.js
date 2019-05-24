@@ -1,3 +1,5 @@
+//global variables
+
 var currentMove;
 var currentHero;
 var currentEnemy;
@@ -111,8 +113,6 @@ var pushYourDice = function(hero) {
 //the engagement model and options
 //enemies will now keep track of the heroes they engage with in an array
 
-
-
 var establishEngagement = function(hero, enemy, disengage) {
 	if (!hero.engagedThisTurn) {
 		hero.engagedThisTurn = true;
@@ -145,53 +145,45 @@ var establishEngagement = function(hero, enemy, disengage) {
 };
 
 var $engageHeroCard = function(hero, enemy) {
+	$cleanUpCards(hero, 'hero', '#unengagedHeroes');
+	$cleanUpCards(enemy, 'enemy', '#unengagedEnemies');
+
 	if (!$('div#engagedEnemies').hasClass(enemy.name)) {
 		$setupEngagementDiv(hero, enemy);
 	}
 	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
 	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
-
-	var oldCard = $('div#unengagedHeroes>div.hero>p').text();
-	if (oldCard === hero.name) {
-		$('div#unengagedHeroes>div.hero').remove();
-	}
-	oldCard = $('div#unengagedEnemies>div.enemy>p').text();
-	if (oldCard === enemy.name) {
-		$('div#unengagedEnemies>div.enemy').remove();
-	}
 };
 
 var $disengageHeroCard = function(hero) {
 	var enemy = returnEngagedEnemy(hero);
 	$generateHeroCard(hero, 'div#unengagedHeroes')
-
 	hero.$disengageEnemy(enemy);
 
 	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
 	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
 
-	var oldCard = $('div.engagingHeroes>div.hero>p').text();
-	if (oldCard === hero.name) {
-		$('div.engagingHeroes>div.hero').remove();
-	}
-
-	
+	$cleanUpCards(hero, 'hero', '.enemyZone');
 
 	if (enemy.engagedTo.length === 0) {
-		$generateEnemyCard(enemy, 'div#unengagedEnemies')
-		oldCard = $('div.enemyZone>div.enemy>p').text();
-		if (oldCard === enemy.name) {
-			$('div.enemyZone>div.enemy').remove();
-		}
+		$cleanUpCards(enemy, 'enemy', '.enemyZone');
 		$('div.enemyZone.' + enemy.name).remove();
+		$generateEnemyCard(enemy, 'div#unengagedEnemies')
 	}
+};
+
+var $childNodeCleanup = function() {
+	for (var i = this.childNodes.length - 1; i >= 0; i--) {
+		$(this.childNodes[i]).remove();
+	};
 };
 
 //enemy engagement zone setup
 
 var $generateEnemyCard = function(enemy, div) {
-	$(div).prepend('<div class="enemy"><p>' + enemy.name + '</p></div>');
-    $('.enemy').append('<div class="statWindow">' + 
+	var enemyID = enemy.ID();
+	$(div).append('<div class="enemy" id="' + enemyID + '"><p>' + enemy.name + '</p></div>');
+    $('#' + enemyID).append('<div class="statWindow">' + 
     	'<div class="enemyStam">Stamina: ' + enemy.stam + '/' + 
     	 enemy.maxStam + '</div>' +
     	'<div class="ult">Ult in: ' + (enemy.moveset.ultFiresOn - enemy.ultCharge) + '</div>' + 
@@ -200,8 +192,9 @@ var $generateEnemyCard = function(enemy, div) {
 }
 
 var $generateHeroCard = function(hero, div) {
-	  $(div).append('<div class=hero><p>' + hero.name + '</p></div');
-    	$('.hero').append('<div class="statWindow">' + 
+	var heroID = hero.ID();
+	  $(div).append('<div class="hero" id="' + heroID + '"><p>' + hero.name + '</p></div');
+    	$('#' + heroID).append('<div class="statWindow">' + 
     		'<div id="menuStam">Stamina: ' + hero.stam + '/' + hero.maxStam + '</div>' +
     		'<div id="menuDiceHeld">Dice Held: ' + hero.dice.length + '</div>' + 
     		'<div>Wielding: ' + hero.inventory.equipped[0].name + '</div>');
@@ -211,6 +204,12 @@ var $setupEngagementDiv = function(hero, enemy) {
 		$('div#engagedEnemies').append('<div class="enemyZone ' + enemy.name + '"><div class="engagingHeroes"></div></div>');
 		$generateEnemyCard(enemy, 'div.' + enemy.name);
 		$generateHeroCard(hero, 'div.engagingHeroes');
+};
+
+var $cleanUpCards = function(unit, type, zoneWithPunctuation) {
+	var oldCard = document.getElementById(unit.ID());		
+	$childNodeCleanup.call(oldCard);
+	$('div' + zoneWithPunctuation + '>div.' + type).remove();
 };
 //attack flow functions
 
