@@ -15,10 +15,7 @@
 
 //battlefield cards and tooltip original generation
 
-    		var enemy1 = enemyMurkman;
-    		theEnemyParty.push(enemy1);
-
-    		$generateEnemyCard(enemy1, 'div#unengagedEnemies');
+    		
 
     		var hero1 = heroMulholland;
     		currentHero = hero1;
@@ -27,9 +24,10 @@
     		refreshDice(theParty);
 
     		$generateHeroCard(hero1, 'div#unengagedHeroes');
+    		createNewEnemy(enemyMurkman, theEnemyParty);
+    		createNewEnemy(enemyStarvedWolf, theEnemyParty);
 
-
-    		populateBreakObjectWithEnemies();
+    		
 
 
 //gen hero's menu
@@ -57,7 +55,11 @@
     		$('div.option').on('click', function() {
     			if ($(this).hasClass('engage')) {
     				$heroMenu2.html('');
-    				$genMenu($heroMenu2, mapNameProp(theEnemyParty), 'engage');
+    					if ($('#heroOptionsWindow1>div.engage').text() === 'Disengage!') {
+							$disengageHeroCard(currentHero);		
+						} else {
+    						$genMenu($heroMenu2, mapNameProp(theEnemyParty), 'engage');
+    					}
     			} else if ($(this).hasClass('attack')) {
     				$heroMenu2.html('');
     				$genMenu($heroMenu2, runOnArray(currentHero.inventory.equipped, mapNameProp, 'move'), 'move');
@@ -81,7 +83,7 @@
 			 			if (moveNames[i] === $(this).text()) {
 			 				$(this).parent().append('<div class="infoWindow">' + 
 			 				'<p>' + theWeapon.name + '</p>' + 
-			 				'<p>Damage:' + theWeapon.damage + '</p>' +
+			 				'<p>Weapon Damage:' + theWeapon.damage + '</p>' +
 			 				'<p>' + findWhichMoveWithName(moveNames[i], theWeapon).text
 			 				+ '</p></div>');
 			 			}

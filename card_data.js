@@ -60,6 +60,7 @@ var Hero = function(name, stam, trait) {
 	this.guard = 0;
 	this.cp = 0;
 	this.gainedCP = false;
+	this.spentCPDuring = false;
 	this.statusEffect = false;
 	this.statuses = [];
 	this.engaged = false;
@@ -84,8 +85,8 @@ Hero.prototype.checkRoll = function(move, diceResults, checkCP) {
 	return checkCP ? (result + this.cp >= move.cost) : ((result + this.rollBonus) >= move.cost) ? true : false; 
 };
 
-Hero.prototype.askCP = function(attemptedMove) {
-	if ((!this.gainedCP) && attemptedMove) {
+Hero.prototype.askCP = function(attemptedMove, spentCP) {
+	if ((!this.gainedCP) && attemptedMove && (!this.spentCPDuring)) {
 		this.gainedCP = true;
 		return this.cp += 1;
 	} 
@@ -114,7 +115,11 @@ Hero.prototype.$engageEnemy = function(enemy) {
 
 Hero.prototype.$disengageEnemy = function(enemy) {
 	if (establishEngagement(this, enemy, true)) {
-		currentCombatMessage = this.name + ' disengaged from their battle with ' + enemy.name + '.';
+		if (enemy.stam <= 0) {
+			currentCombatMessage = this.name + ' disengaged from the vanquished ' + enemy.name + '.';
+		} else {
+			currentCombatMessage = this.name + ' disengaged from their battle with ' + enemy.name + '.';
+		}
 		$('#heroOptionsWindow1>div.engage').text(genEngageOption(this));
 		return true;
 	}
@@ -173,6 +178,9 @@ var Move = function(name, cost, weaponType, enemy, self, extra) {
 
 Move.prototype.attack = function(target, weapon, hero) {
 	var targetType = Object.getPrototypeOf(target).constructor.name.toLowerCase();
+	if (targetType === 'object') {
+		targetType = 'enemy';
+	}
 	return this[targetType](target, weapon, hero);
 };
 
@@ -267,7 +275,8 @@ var allEnemies = {
 
 var Enemy = function(name, stam, tier, region, breakThresh) {
 	this.name = name;
-	this.ID = function() {return this.name + theEnemyParty.filter(function(en){return en.name === this.name}).length};
+	this.shortName = name.slice(0, 9).toLowerCase().split(' ').join('');
+	this.ID = function() {return this.shortName + theEnemyParty.filter(function(en){return en.name === this.name}).length};
 	this.stam = stam;
 	this.maxStam = stam;
 	this.tier = tier;
@@ -373,6 +382,51 @@ var enemySlipAllEngagement = function(unit) {
 	$disengageHeroCard(unit);
 };
 
+var enemyStarvedWolf = new Enemy('Starved Wolf', 11, 1, 'Deep Marshes', 6);
+
+
+enemyStarvedWolf.moveset = {
+	basic : function() {return 3 - this.breakDiceCurrent.reduce(arrayAsSingleValue, 0)},
+	specialized : function() {
+		this.breakDiceCurrent = [];
+		for (var i = 0; i < theParty.length; i++) {
+			if (theParty[i].breakDiceOn[this].ID()) {
+				theParty[i].breakDiceOn[this].ID() = [];
+			}
+		};
+		arguments[0].forEach(enemySlipAllEngagement);
+		this.engaged = false;
+		this.engagedTo = [];
+		currentCombatMessage = this.moveset.specializedText;
+		this.chargeUlt();
+	},
+	advanced : function() {
+		createNewEnemy(enemyStarvedWolf, theEnemyParty);
+		currentCombatMessage = this.moveset.advancedText;
+	},
+	basicText : 'Bites for 3 damage, but this damage is reduced for each break die on the beast.',
+	specializedText : 'The starved wolf shakes off all break dice and engaging heroes, then charges!',
+	advancedText : 'The howl of one hungry beast summons another....',
+	ultimate : function() {
+		currentCombatMessage = 'If this tester had actual routes, this might have a consequence.'
+		$printMessage();
+	},
+	ultFiresOn : 2,
+	ultimateText : 'The caravan\'s horses are spooked. Add 2 days to your journey.',
+	hasOppo : false
+};
+
+
+
+
+
+var enemyReekingCretin = new Enemy('Reeking Cretin', 12, 1, 'Deep Marshes', 6);
+
+
+
+
+var enemyBoilskinTrapper = new Enemy('Boilskin Trapper', 15, 2, 'Deep Marshes', 8);
+
 
 /*
 
@@ -386,6 +440,7 @@ enemy moveset template = {
 	ultimate :  
 	ultFiresOn : 
 	ultimateText :
+	hasOppo : 
 };
 
 */

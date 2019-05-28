@@ -15,6 +15,17 @@ var messageDelay;
 
 var theParty = [];
 var theEnemyParty = [];
+var vanquishedEnemies = [];
+
+//enemy generation!
+
+var createNewEnemy = function(type, party) {
+	party.push({});
+	$.extend(true, party[party.length - 1], type);
+	$generateEnemyCard(party[party.length - 1], 'div#unengagedEnemies');
+	populateBreakObjectWithEnemies();
+}
+
 
 //character menu generation functions
 
@@ -80,8 +91,10 @@ var genStamMeter = function(hero) {
 var populateBreakObjectWithEnemies = function() {
 	theParty.forEach(function(hero) {
 		theEnemyParty.forEach(function(enemy) {
-			var enemyName = enemy.name;
-			hero.breakDiceOn[enemyName] = [];
+			var enemyName = enemy.ID();
+			if (!hero.breakDiceOn[enemyName]) {
+				hero.breakDiceOn[enemyName] = [];
+			}
 		});
 	})
 };
@@ -127,7 +140,7 @@ var establishEngagement = function(hero, enemy, disengage) {
 			enemy.engagedTo = enemy.engagedTo.filter(function(element, index) {
 				return element != hero;
 			});
-			if (enemy.moveset.hasOppo) {
+			if (enemy.moveset.hasOppo && enemy.stam > 0) {
 				$printMessage(enemy.moveset.oppoText);
 				currentTargetDamage = enemy.moveset.oppo.call(enemy);
 				if (typeof currentTargetDamage === 'number') {
@@ -154,13 +167,13 @@ var $engageHeroCard = function(hero, enemy) {
 	$cleanUpCards(hero, 'hero', '#unengagedHeroes');
 	$cleanUpCards(enemy, 'enemy', '#unengagedEnemies');
 
-	if (!$('div#engagedEnemies').hasClass(enemy.name)) {
+	if (!$('div#engagedEnemies').hasClass(enemy.ID())) {
 		$setupEngagementDiv(hero, enemy);
 	} else {
-		$generateHeroCard(hero, 'div.' + enemy.name + '>div.engagingHeroes');
+		$generateHeroCard(hero, 'div.' + enemy.ID() + '>div.engagingHeroes');
 	}
-	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
-	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
+	$('div.' + enemy.ID() + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
+	$('div.enemyZone.' + enemy.ID()).css('width', (132 * enemy.engagedTo.length));
 };
 
 var $disengageHeroCard = function(hero) {
@@ -170,12 +183,12 @@ var $disengageHeroCard = function(hero) {
 	var enemy = returnEngagedEnemy(hero);
 	hero.$disengageEnemy(enemy);
 
-	$('div.' + enemy.name + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
-	$('div.enemyZone.' + enemy.name).css('width', (132 * enemy.engagedTo.length));
+	$('div.' + enemy.ID() + '>div.engagingHeroes').css('width', (120 * enemy.engagedTo.length));
+	$('div.enemyZone.' + enemy.ID()).css('width', (132 * enemy.engagedTo.length));
 
 	if (enemy.engagedTo.length === 0) {
 		$cleanUpCards(enemy, 'enemy', '.enemyZone');
-		$('div.enemyZone.' + enemy.name).remove();
+		$('div.enemyZone.' + enemy.ID()).remove();
 		$generateEnemyCard(enemy, 'div#unengagedEnemies')
 	}
 };
@@ -242,29 +255,21 @@ var $generateHeroCard = function(hero, div) {
 	  				hero.breakDiceOn[en].length + '</div>');
 	  		}
 	  	};
-	  	
-	  	
-/*
-	  	hero.inventory.equipped[0].name
-    	$('#' + heroID).append('<div class="statWindow">' + 
-    		'<div class="wielding">Wielding: ' + hero.inventory.equipped[0].name + '</div>')
-    		.append('<div class="statWindow">' +
-    			'<div>' +  '</div>'
-    			)
-    			*/
-}
+
+};
     		
 var $setupEngagementDiv = function(hero, enemy) {
-		$('div#engagedEnemies').append('<div class="enemyZone ' + enemy.name + '"><div class="engagingHeroes"></div></div>');
-		$generateEnemyCard(enemy, 'div.' + enemy.name);
+		$('div#engagedEnemies').append('<div class="enemyZone ' + enemy.ID() + '"><div class="engagingHeroes"></div></div>');
+		$generateEnemyCard(enemy, 'div.' + enemy.ID());
 		$generateHeroCard(hero, 'div.engagingHeroes');
 };
 
 var $cleanUpCards = function(unit, type, zoneWithPunctuation) {
 	var oldCard = document.getElementById(unit.ID());		
 	$childNodeCleanup.call(oldCard);
-	$('div' + zoneWithPunctuation + '>div.' + type).remove();
+	$('div' + zoneWithPunctuation + '>div#' + unit.ID()).remove();
 };
+
 //attack flow functions
 
 //choose move
@@ -334,17 +339,17 @@ var chooseMove = function(move, hero) {
 				}
 				if (cpSpent > 0) {
 					hero.cp -= cpSpent;
+					hero.spentCPDuring = true;
 					hero.rollBonus = cpSpent;
 					if (hero.checkRoll(move, currentDiceResult)) {
 						currentDiceResult.push(cpSpent);
-						hero.gainedCP = true;
 						attackSuccessfully(hero, move);
-						hero.gainedCP = false;
 					} else {
 						$printMessage('Wasn\'t enough CP to do the trick, friend.');
-						hero.cp +- cpSpent;
+						hero.cp += cpSpent;
 						return false
 					}
+					hero.rollBonus = 0;
 				} else {
 					currentCombatMessage = 'Failure! ' + hero.name + ' rolled a ' + 
 					currentDiceResult.reduce(arrayAsSingleValue, 0) + '!';
@@ -386,7 +391,7 @@ var attackSuccessfully = function(hero, move) {
 	currentCombatMessage = currentTarget.name + ' was dealt ' + currentTargetDamage + ' damage!';
 	messageDelay = 420;
 
-	$updateTooltip('enemy', 'stam');
+	$updateTooltip(currentTarget);
 };
 
 
@@ -449,14 +454,14 @@ var chooseBreak = function(hero) {
 	}
 
 	$updateTooltipHeroDice(hero);
-	$updateTooltip('enemy', 'stam');
+	$updateTooltip(currentTarget);
 	$('#heroOptionsWindow2').html('');
 	$('#heroOptionsWindow3').remove(); 
 };
 
 var addBreak = function(hero, target, breakDiceResult) {
 	currentTargetDamage = breakDiceResult;
-	var targetName = target.name
+	var targetName = target.ID();
 	currentDice.forEach(function(die) {
 		hero.breakDiceOn[targetName].push(die);
 	});
@@ -473,7 +478,7 @@ var addBreak = function(hero, target, breakDiceResult) {
 };
 
 var InitiateBreak = function(brokenEnemy) {
-	var enemyName = brokenEnemy.name;
+	var enemyName = brokenEnemy.ID();
 	theParty.forEach(function(hero) {
 		if (hero.breakDiceOn[enemyName]) {
 			refreshDice(hero);
@@ -499,7 +504,7 @@ var enemyPartyAttacks = function(enemiesArr) {
 			currentEnemy = activeEnemy;
 			if (!activeEnemy.engaged) {
 				activeEnemy.chargeUlt();
-				setTimeout($printMessage, 600);
+				$printMessage();
 			} else if (activeEnemy.engaged) {
 				currentTarget = activeEnemy.engagedTo;
 				var enemyAttack = activeEnemy.attack(currentTarget);
@@ -511,14 +516,14 @@ var enemyPartyAttacks = function(enemiesArr) {
 						currentCombatMessage = activeEnemy.name + ' dealt ' + enemyAttack
 							 + ' damage to ' + attackedHero.name + '.';
 						attackedHero.getStatus();
-						setTimeout($printMessage, 800);
+						$printMessage();
 					}
 				} else {
-					setTimeout($printMessage, 550);
+					$printMessage();
 				}
 			}
 			activeEnemy.turnTaken = true;
-			$updateTooltip('enemy', 'stam');
+			$updateTooltip(activeEnemy);
 			$updateTooltipHeroDice(currentHero);
 			$updateMenuHeroStats();
 		}
@@ -599,8 +604,9 @@ var returnCheckBox = function(checkbox) {
 var $clickSubmitMove = function() {
 	currentWeapon = findEquippedWeaponWithMove(currentMoveText, currentHero);
 	currentMove = findWhichMoveWithName(currentMoveText, currentWeapon);
-	currentHero.askCP(chooseMove(currentMove, currentHero));
-	setTimeout('$printMessage()', messageDelay);
+	currentHero.askCP(chooseMove(currentMove, currentHero), currentHero.spentCP);
+	currentHero.spentCPDuring = false;
+	$printMessage();
 	$updateMenuHeroStats();
 	emptyDice();
 };
@@ -615,18 +621,9 @@ var $clickSubmitBreak = function() {
 
 //CP handling
 
-//need to implement!
-
 var promptForCP = function(rollResult, move) {
 	return Number(prompt('You rolled [' + rollResult + '] and you need ' + move.cost + ' total... Would you like to spend CP?', '0'));
 };
-
-//if roll is false, hero has CP, and CP amount could lead to a pass
-//show roll result
-//allow player to input number of CP to spend which would make it a pass
-//add CP to roll bonus
-
-
 
 //combat feed print
 
@@ -638,8 +635,10 @@ var $printMessage = function(message) {
 	if (message.includes('damage')) {
 		$('div#feed>p.message:first').addClass('damage');
 	}
+	if (message.includes('vanquished')) {
+		$('div#feed>p.message:first').css('color', 'pink');
+	}
 };
-
 
 
 // combat cleanup functions follow
@@ -652,16 +651,15 @@ var $updateTooltipHeroDice = function(hero) {
 	$($heroCard + '.menuDiceHeld').text('Dice Held: ' + hero.dice.length);
 }
 
-var $updateTooltip = function(unitType, stat) {
-	var statName = stat.slice(0, 1).toUpperCase() + stat.slice(1)
-	var className = '' + unitType + statName; 
-	if (statName === 'Stam') {
-		statName += 'ina';
-	}
-	$('.ult').text('Ult in: ' + (theEnemyParty[0].moveset.ultFiresOn - theEnemyParty[0].ultCharge));
-	$('.' + className).text(statName + ': ' + theEnemyParty[0][stat] + '/' + theEnemyParty[0].maxStam);
-	$('.enemyBreak:first').text('Break Now: ' + theEnemyParty[0].breakDiceCurrent.reduce(arrayAsSingleValue, 0));
-	$('.statWindow>div.enemyBreak').text('Break Dice: [' + theEnemyParty[0].breakDiceCurrent + ']');
+//need to fix tooltip to work not like shit! and with more than 1 enemy
+
+var $updateTooltip = function(enemy) {
+	var enemyID = enemy.ID();
+	var divPreface = '#' + enemyID + '>div>div';
+	$(divPreface + '.enemyStam').text('Stamina: ' + enemy.stam + '/' + enemy.maxStam);
+	$(divPreface + '.ult').text('Ult in: ' + (enemy.moveset.ultFiresOn - enemy.ultCharge));
+	$(divPreface + '.enemyBreak:first').text('Break Now: ' + enemy.breakDiceCurrent.reduce(arrayAsSingleValue, 0));
+	$(divPreface + '.statWindow>div.enemyBreak').text('Break Dice: [' + enemy.breakDiceCurrent + ']');
 };
 
 
@@ -690,10 +688,18 @@ var emptyDice= function() {
 
 var triggerEndOfTurn = function() {
 	if (theParty.every(function(unit) {return unit.turnTaken;})) {
-		theEnemyParty.forEach(function(enemy) {
+		theEnemyParty.forEach(function(enemy, index) {
 			enemy.broken = false;
 			if (enemy.stam > 0) {
 				enemy.turnTaken = false;
+			} else {
+				enemy.engagedTo.forEach(function(engager) {
+					$disengageHeroCard(engager);
+				});
+				$('div.enemyZone.' + enemy.ID()).remove();
+				$cleanUpCards(enemy, 'enemy', '#unengagedEnemies');
+				vanquishedEnemies.push(enemy);
+				theEnemyParty.splice(index, 1);
 			}
 		});
 		$('div#turnMarquee').delay(700).text('ENEMY TURN');
